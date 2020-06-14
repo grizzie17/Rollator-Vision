@@ -1,0 +1,37 @@
+{
+    "env": {
+        "SKETCHBOOKS": "C:\\Users\\johng\\LocalDocuments\\Development\\Arduino-Sketchbooks"
+    },
+    "configurations": [
+        {
+            "name": "Arduino",
+            "defines": [
+                "ARDUINO=10800",
+                "USBCON"
+            ],
+            "includePath": [
+                ".",
+                "${workspaceRoot}",
+                "C:\\Arduino\\hardware\\arduino\\avr\\**",
+                "C:\\Arduino\\hardware\\arduino\\**",
+                "C:\\Arduino\\hardware\\tools\\avr\\avr\\include\\**",
+                "C:\\Arduino\\tools\\**",
+                "C:\\Arduino\\libraries\\**",
+                "C:\\Arduino\\libraries\\**\\**\\**",
+                "${env:SKETCHBOOKS}\\libraries\\**",
+                "${env:SKETCHBOOKS}\\libraries\\**\\**",
+                "${env:SKETCHBOOKS}\\libraries\\YogiDelay\\src",
+                "${env:SKETCHBOOKS}\\libraries\\YogiPitches\\src",
+                "${env:SKETCHBOOKS}\\libraries\\YogiSonic\\src"
+            ],
+            "forcedInclude": [
+                "C:\\Arduino\\hardware\\arduino\\avr\\cores\\arduino\\Arduino.h"
+            ],
+            "intelliSenseMode": "msvc-x64",
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/VC/Tools/MSVC/14.24.28314/bin/Hostx64/x64/cl.exe"
+        }
+    ],
+    "version": 4
+}
