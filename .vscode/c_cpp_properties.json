@@ -4,7 +4,7 @@
     },
     "configurations": [
         {
-            "name": "Arduino",
+            "name": "Win32",
             "defines": [
                 "ARDUINO=10800",
                 "USBCON"
@@ -22,13 +22,15 @@
                 "${env:SKETCHBOOKS}\\libraries\\**\\**",
                 "${env:SKETCHBOOKS}\\libraries\\YogiDelay\\src",
                 "${env:SKETCHBOOKS}\\libraries\\YogiPitches\\src",
-                "${env:SKETCHBOOKS}\\libraries\\YogiSonic\\src"
+                "${env:SKETCHBOOKS}\\libraries\\YogiSonic\\src",
+                "${env:SKETCHBOOKS}\\libraries\\MPU9250\\src",
+                "${env:SKETCHBOOKS}\\libraries\\Sleep_n0m1"
             ],
             "forcedInclude": [
                 "C:\\Arduino\\hardware\\arduino\\avr\\cores\\arduino\\Arduino.h"
             ],
             "intelliSenseMode": "msvc-x64",
-            "cStandard": "c11",
+            "cStandard": "c99",
             "cppStandard": "c++11",
             "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/VC/Tools/MSVC/14.24.28314/bin/Hostx64/x64/cl.exe"
         }
