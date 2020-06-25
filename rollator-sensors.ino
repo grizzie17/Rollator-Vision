@@ -182,9 +182,7 @@ class CAvgSonic
 public:
     CAvgSonic( YogiSonic& sonic, char* sName )
             : m_rSonic( sonic )
-            , m_tDelay( 500 )
-            , m_nDelay( 500 )
-            , m_nDelayCount( 0 )
+            , m_tDelay( 200 )
             , m_nDistance( 0 )
             , m_nDistPrevious( 0 )
             , m_nIndex( 0 )
@@ -209,8 +207,8 @@ public:
         for ( int i = 0; i < k_nSize; ++i )
             m_aDist[i] = 0;
         m_nIndex = 0;
-        m_nDelayCount = 0;
         m_nDistance = 0;
+        m_nDistPrevious = 0;
     }
 
 
@@ -219,7 +217,7 @@ public:
     {
         bool bDirty = false;
         long dist = this->getDistanceCm();
-        if ( dist != m_nDistance )
+        if ( 1 < dist && dist != m_nDistance )
         {
             bDirty = true;
             m_nDistance = dist;
@@ -231,6 +229,10 @@ public:
     long
     getDistance()
     {
+        if ( m_nDistance < 2 )
+        {
+            m_nDistance = getDistanceCm();
+        }
         return m_nDistance;
     }
 
@@ -239,11 +241,12 @@ public:
     getDistanceCm()
     {
         long dist = m_rSonic.getDistanceCm();
+#if false
         int  nIndexPrevious = m_nIndex;
         if ( 0 == nIndexPrevious )
             nIndexPrevious = k_nSize - 1;
         long distPrevious = m_aDist[nIndexPrevious];
-        if ( 0 < distPrevious && abs( dist - distPrevious ) <= 2 )
+        if ( 1 < distPrevious && abs( dist - distPrevious ) <= 2 )
             dist = distPrevious;
         m_aDist[m_nIndex] = dist;
         if ( k_nSize <= ++m_nIndex )
@@ -254,7 +257,7 @@ public:
         int j = 0;
         for ( int i = 0; i < k_nSize; ++i )
         {
-            if ( 0 < m_aDist[i] )
+            if ( 1 < m_aDist[i] )
             {
                 dist += m_aDist[i];
                 ++j;
@@ -265,6 +268,13 @@ public:
             return dist / j;
         else
             return 0;
+#else
+        long distPrevious = m_nDistPrevious;
+        if ( 1 < distPrevious && abs( dist - distPrevious ) <= 4 )
+            dist = distPrevious;
+        m_nDistPrevious = dist;
+        return dist;
+#endif
     }
 
 
@@ -272,8 +282,6 @@ protected:
     char             m_sName[24];
     YogiSonic&       m_rSonic;
     YogiDelay        m_tDelay;
-    unsigned long    m_nDelay;       // milliseconds to delay
-    int              m_nDelayCount;  // idle period
     long             m_nDistance;
     long             m_nDistPrevious;
     static const int k_nSize = 3;
@@ -284,6 +292,10 @@ protected:
 
 LedControl g_tVibeLeft( kPinVibeLeft );
 LedControl g_tVibeRight( kPinVibeRight );
+
+YogiDelay g_tSonicDelay;
+int       g_nSonicCycle = 0;
+long      g_nSonicCount = 0;
 
 
 YogiSonic g_tSonicLeft;
@@ -296,20 +308,33 @@ CAvgSonic g_tAvgFrontLeft( g_tSonicFrontLeft, "FrontLeft" );
 CAvgSonic g_tAvgFrontRight( g_tSonicFrontRight, "FrontRight" );
 CAvgSonic g_tAvgRight( g_tSonicRight, "Right" );
 
-MPU9250 g_tIMU( Wire, 0x68 );
+
+MPU9250 g_tIMU( Wire, 0x68 );  // relay
 Sleep   g_tSleep;
 
-YogiDelay g_tDelay;
 
-
-unsigned long g_uTimeIdle = 1000 * 10;  // idle time before sleep
-long          g_nPotValue = 20;         // distance in cm to alarm
+const unsigned long k_uTimeIdle = 1000 * 30;  // idle time before sleep
+long                g_nPotValue = 20;         // distance in cm to alarm
 
 
 volatile bool g_bAccelInterrupt = false;  // did the accel cause interrupt
 unsigned long g_uCountInterrupt = 0;      // number of interrupts
 unsigned long g_uTimeInterrupt = 0;
 unsigned long g_uTimeCurrent = 0;
+
+
+void
+sonicSetup()
+{
+    g_tSonicLeft.init( kPinSonicTrigLeft, kPinSonicEchoLeft );
+    g_tSonicFrontLeft.init( kPinSonicTrigFrontLeft, kPinSonicEchoFrontLeft );
+    g_tSonicFrontRight.init( kPinSonicTrigFrontRight, kPinSonicEchoFrontRight );
+    g_tSonicRight.init( kPinSonicTrigRight, kPinSonicEchoRight );
+
+    g_nSonicCount = 0;
+    g_nSonicCycle = 0;
+    g_tSonicDelay.init( 100 );
+}
 
 
 void
@@ -323,22 +348,38 @@ void
 interruptAttach()
 {
     attachInterrupt(
-            digitalPinToInterrupt( kPinAccel ), interruptHandler, RISING );
+            digitalPinToInterrupt( kPinAccel ), interruptHandler, CHANGE );
 }
 
 void
 enterSleep()
 {
     Serial.println( "Entering Sleep Mode" );
+    digitalWrite( kPinRelay, LOW );  // powerdown sensors
+    g_tVibeLeft.off();
+    g_tVibeRight.off();
     delay( 500 );
+
+
     g_tSleep.pwrDownMode();
     g_tSleep.sleepPinInterrupt( kPinAccel, RISING );
 
     // we wakeup here
     Serial.println( "Wake Up" );
+
+    digitalWrite( kPinRelay, HIGH );  // powerup sensors
+    // ? do we need to reintialize any of the sensors ?
+
     interruptHandler();
     interruptAttach();
     g_uTimeCurrent = millis();
+}
+
+
+long
+potentiometerRead()
+{
+    return max( 10, abs( (long)analogRead( kPinPot ) * 400 / 1023 ) );
 }
 
 
@@ -349,13 +390,21 @@ setup()
     while ( ! Serial )
         ;  // wait for Serial to startup
 
-    g_tSonicLeft.init( kPinSonicTrigLeft, kPinSonicEchoLeft );
-    g_tSonicFrontLeft.init( kPinSonicTrigFrontLeft, kPinSonicEchoFrontLeft );
-    g_tSonicFrontRight.init( kPinSonicTrigFrontRight, kPinSonicEchoFrontRight );
-    g_tSonicRight.init( kPinSonicTrigRight, kPinSonicEchoRight );
+
+    pinMode( kPinRelay, OUTPUT );
+    digitalWrite( kPinRelay, HIGH );  // turn on relay
+    // ? Do we need to delay or wait to make sure the relay is active ?
+    delay( 500 );
+
+
+    sonicSetup();
+
     g_tVibeLeft.init();
     g_tVibeRight.init();
-    g_nPotValue = (long)analogRead( kPinPot ) * 400 / 1023;
+    //pinMode( kPinPot, INPUT );
+    g_nPotValue = potentiometerRead();
+    Serial.print( "pot=" );
+    Serial.println( g_nPotValue );
 
 
     int nStatus = g_tIMU.begin();
@@ -365,22 +414,22 @@ setup()
         Serial.print( "status=" );
         Serial.println( nStatus, HEX );
     }
-    nStatus = g_tIMU.enableWakeOnMotion( 300, MPU9250::LP_ACCEL_ODR_250HZ );
-    if ( nStatus )
+    nStatus = g_tIMU.enableWakeOnMotion( 75, MPU9250::LP_ACCEL_ODR_62_50HZ );
+    if ( nStatus < 0 )
     {
         Serial.println( "IMU enable wake on motion failure" );
         Serial.print( "status=" );
         Serial.println( nStatus, HEX );
     }
 
-    g_tDelay.init( 1000 * 2 );
 
     g_bAccelInterrupt = false;
     pinMode( kPinAccel, INPUT );
     digitalWrite( kPinAccel, LOW );
     interruptAttach();
-    g_uTimeCurrent = millis();
     g_uTimeInterrupt = millis();
+
+    g_uTimeCurrent = millis();
 }
 
 
@@ -392,38 +441,51 @@ loop()
     {
         g_bAccelInterrupt = false;
         g_uTimeInterrupt = millis();
-        if ( g_tDelay.timesUp( g_uTimeCurrent ) )
-        {
-            Serial.print( "Interrupt: " );
-            Serial.println( ++g_uCountInterrupt );
-        }
+        Serial.print( "Interrupt: " );
+        Serial.println( ++g_uCountInterrupt );
+        g_nSonicCount = 0;
     }
     else
     {
-        bool bDirty = false;
-        if ( g_uTimeIdle < g_uTimeCurrent - g_uTimeInterrupt )
+        if ( k_uTimeIdle < g_uTimeCurrent - g_uTimeInterrupt )
         {
             enterSleep();
-            g_uTimeInterrupt = millis();
+
+            // stuff to do when we wake up
+            g_nPotValue = potentiometerRead();
             g_uCountInterrupt = 0;
+            g_uTimeInterrupt = millis();
+            g_tAvgLeft.reset();
+            g_tAvgFrontLeft.reset();
+            g_tAvgFrontRight.reset();
+            g_tAvgRight.reset();
+            g_nSonicCycle = 0;
+            g_nSonicCount = 0;
         }
         else
         {
-            if ( g_tAvgFrontLeft.timesUp( g_uTimeCurrent ) )
+            bool bDirty = false;
+            if ( g_tSonicDelay.timesUp( g_uTimeCurrent ) )
             {
-                bDirty = g_tAvgFrontLeft.isDirty();
-            }
-            else if ( g_tAvgFrontRight.timesUp( g_uTimeCurrent ) )
-            {
-                bDirty = g_tAvgFrontRight.isDirty();
-            }
-            else if ( g_tAvgLeft.timesUp( g_uTimeCurrent ) )
-            {
-                bDirty = g_tAvgLeft.isDirty();
-            }
-            else if ( g_tAvgRight.timesUp( g_uTimeCurrent ) )
-            {
-                bDirty = g_tAvgRight.isDirty();
+                switch ( g_nSonicCycle )
+                {
+                case 0:
+                    bDirty = g_tAvgFrontLeft.isDirty();
+                    break;
+                case 1:
+                    bDirty = g_tAvgFrontRight.isDirty();
+                    break;
+                case 2:
+                    bDirty = g_tAvgLeft.isDirty();
+                    break;
+                case 3:
+                    bDirty = g_tAvgRight.isDirty();
+                    break;
+                default:
+                    g_nSonicCycle = 0;
+                    break;
+                }
+                ++g_nSonicCycle;
             }
 
             if ( bDirty )
@@ -432,6 +494,8 @@ loop()
                 long nFL = g_tAvgFrontLeft.getDistance();
                 long nFR = g_tAvgFrontRight.getDistance();
                 long nR = g_tAvgRight.getDistance();
+
+                ++g_nSonicCount;
                 Serial.print( "L = " );
                 Serial.print( nL );
                 Serial.print( ";  FL = " );
@@ -441,7 +505,9 @@ loop()
                 Serial.print( ";  R = " );
                 Serial.print( nR );
                 Serial.print( "; pot = " );
-                Serial.println( g_nPotValue );
+                Serial.print( g_nPotValue );
+                Serial.print( "; #" );
+                Serial.println( g_nSonicCount );
 
                 bDirty = false;
                 if ( ( 1 < nL && nL < g_nPotValue )  //
