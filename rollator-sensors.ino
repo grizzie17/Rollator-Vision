@@ -1,35 +1,228 @@
-#include <MPU9250.h>
-#include <Sleep_n0m1.h>
+
+#define _DEBUG
+#include <YogiDebug.h>
+
+#include <ADXL345_setup.h>  // includes SparkFun ADXL345 Library
+#include <WatchDog.h>
+// #include <Wire.h>
 
 #include <YogiDelay.h>
 #include <YogiPitches.h>
+#include <YogiSleep.h>
 #include <YogiSonic.h>
 
-#include "debug.h"
+const uint8_t k_pinINT = 2;  // INT0
 
-const uint8_t kPinRelay = 13;
 
-const uint8_t kPinSonicTrigLeft = 12;
-const uint8_t kPinSonicEchoLeft = 11;       // PWM
-const uint8_t kPinSonicTrigFrontLeft = 10;  // PWM
-const uint8_t kPinSonicEchoFrontLeft = 9;   // PWM
+const uint8_t kPinVibeRight = 3;
+const uint8_t kPinVibeFrontRight = 5;
+const uint8_t kPinVibeFrontLeft = 4;
+const uint8_t kPinVibeLeft = 6;
+
+const uint8_t kPinSonicEchoRight = 7;
+const uint8_t kPinSonicTrigRight = 7;
+
+const uint8_t kPinSonicEchoFrontRight = 8;
 const uint8_t kPinSonicTrigFrontRight = 8;
-const uint8_t kPinSonicEchoFrontRight = 7;
-const uint8_t kPinVibeLeft = 6;   // PWM
-const uint8_t kPinVibeRight = 5;  // PWM
-const uint8_t kPinSonicTrigRight = 4;
-const uint8_t kPinSonicEchoRight = 3;  // INT1 [PWM]
-const uint8_t kPinAccel = 2;           // INT0
-const int     kPinPot = A0;
 
-const double kDistanceRed = 10.0;
+const uint8_t kPinSonicEchoFrontLeft = 9;
+const uint8_t kPinSonicTrigFrontLeft = 9;
 
+const uint8_t kPinSonicEchoLeft = 10;
+const uint8_t kPinSonicTrigLeft = 10;
+
+const uint8_t k_pinRelay = 11;
+
+const uint8_t kPinPotDist = A0;
+const uint8_t kPinSDA = A4;
+const uint8_t kPinSCL = A5;
+
+
+#ifndef __asm__
+#    ifdef _MSC_VER
+#        define __asm__ __asm
+#    endif
+#endif
+
+
+typedef enum orientation_t
+        : uint8_t
+{
+    OR_UNKNOWN,
+    OR_VERTICAL,
+    OR_HORIZONTAL
+} orientation_t;
+
+orientation_t g_eOrientation = OR_UNKNOWN;
+
+bool          g_bSleepy = false;
+bool          g_bActiveLaydown = false;
+unsigned long g_uLaying = 0;
+
+
+unsigned long g_uTimeCurrent = 0;
+unsigned long g_uTimePrevious = 0;
+unsigned long g_uTimeInterrupt = 0;
+
+const uint8_t       k_uAdxlDelaySleep = 45;
+const unsigned long k_uDelaySleep = 600 * k_uAdxlDelaySleep;
+
+
+YogiDelay g_tSonicDelay;
+int       g_nSonicCycle = 0;
+long      g_nSonicCount = 0;
+
+
+YogiSleep g_tSleep;
+
+
+//============== RELAY ===============
+
+inline void
+relaySetup()
+{
+    pinMode( k_pinRelay, OUTPUT );
+}
+
+
+void
+relayEnable()
+{
+    relaySetup();
+    digitalWrite( k_pinRelay, HIGH );
+    delay( 400 );
+}
+
+
+void
+relayDisable()
+{
+    relaySetup();
+    digitalWrite( k_pinRelay, LOW );
+}
+
+
+//================ ADXL =================
+
+void
+adxlAttachInterrupt()
+{
+    pinMode( k_pinINT, INPUT );
+    attachInterrupt(
+            digitalPinToInterrupt( k_pinINT ), adxlIntHandler, RISING );
+}
+
+void
+adxlDetachInterrupt()
+{
+    detachInterrupt( digitalPinToInterrupt( k_pinINT ) );
+}
+
+
+void
+adxlDrowsy()
+{
+    g_uCountInterrupt = 0;
+    adxl.setInterruptMask( 0 );
+    adxl.getInterruptSource();  // clear mInterrupts
+
+    adxl.setInterruptMask( k_maskActivity );
+    adxl.setLowPower( true );
+    // adxlAttachInterrupt();
+}
+
+
+void
+adxlSleep()
+{
+    adxlDetachInterrupt();
+    g_uCountInterrupt = 0;
+    adxl.getInterruptSource();  // clear mInterrupts
+
+    adxl.setInterruptMask( 0 );
+    adxl.setLowPower( true );
+}
+
+
+void
+adxlWakeup()
+{
+    adxl.setLowPower( false );
+    adxl.setInterruptMask( k_maskAll );
+    g_uCountInterrupt = 0;
+    adxl.getInterruptSource();
+    adxlAttachInterrupt();
+    adxlIntHandler();
+    g_nActivity = 0;
+}
+
+
+//================= WATCHDOG =================
+
+volatile bool g_bWatchDogInterrupt = false;
+
+void
+watchdogIntHandler()
+{
+    g_bWatchDogInterrupt = true;
+}
+
+
+void
+watchdogSleep()
+{
+    DEBUG_PRINTLN( "Watchdog Sleep" );
+    DEBUG_DELAY( 300 );
+    relayDisable();
+    adxlSleep();
+    WatchDog::setPeriod( OVF_4000MS );
+    WatchDog::start();
+    g_tSleep.powerDown();
+}
+
+
+void
+watchdogWakeup()
+{
+    WatchDog::stop();
+    adxlWakeup();
+    relayEnable();
+    g_uTimeInterrupt = millis();
+    DEBUG_PRINTLN( "Watchdog Wakeup" );
+}
+
+
+void
+watchdogHandler()
+{
+    if ( isHorizontal() )
+    {
+        // go back to sleep
+        g_eOrientation = OR_HORIZONTAL;
+        adxlSleep();
+        WatchDog::start();
+        g_tSleep.sleep();
+    }
+    else
+    {
+        // cancel watchdog
+        watchdogWakeup();
+
+        g_uLaying = 0;
+        g_bActiveLaydown = false;
+        g_eOrientation = OR_VERTICAL;
+    }
+}
+
+
+//============== LED ===============
 
 class LedControl
 {
 public:
     LedControl( uint8_t pin )
             : m_pin( pin )
+            , m_val( 0 )
             , m_on( false )
     {}
 
@@ -37,14 +230,16 @@ public:
     init()
     {
         pinMode( m_pin, OUTPUT );
+        m_val = 0;
     }
 
     void
-    on()
+    on( uint8_t value = HIGH )
     {
-        if ( ! m_on )
+        if ( m_val != value )
         {
-            digitalWrite( m_pin, HIGH );
+            m_val = value;
+            analogWrite( m_pin, m_val );
             m_on = true;
         }
     }
@@ -52,18 +247,22 @@ public:
     void
     off()
     {
-        if ( m_on )
+        if ( 0 < m_val )
         {
-            digitalWrite( m_pin, LOW );
+            m_val = 0;
+            analogWrite( m_pin, m_val );
             m_on = false;
         }
     }
 
 protected:
     bool    m_on;
+    uint8_t m_val;
     uint8_t m_pin;
 };
 
+
+//=========== VIBE ===========
 
 class VibeControl
 {
@@ -93,89 +292,46 @@ protected:
 };
 
 
-#if false
-class ToneControl
+LedControl g_tVibeLeft( kPinVibeLeft );
+LedControl g_tVibeFrontLeft( kPinVibeFrontLeft );
+LedControl g_tVibeFrontRight( kPinVibeFrontRight );
+LedControl g_tVibeRight( kPinVibeRight );
+
+//============== SLEEP ===============
+
+void
+enterSleep()
 {
-public:
-    ToneControl()
-            : m_pin( 0 )
-            , m_pMelody( 0 )
-            , m_nNoteCount( 0 )
-            , m_nIndex( 0 )
-            , m_tDelay( 1000 )
-            , m_bPlaying( false )
-    {}
-    ~ToneControl()
-    {
-        delete[] m_pMelody;
-    }
+    DEBUG_PRINTLN( "Sleepy" );
+    DEBUG_DELAY( 300 );
 
-    void
-    init( uint8_t pin, int nCount, int* pMelody, unsigned int nDuration )
-    {
-        m_pin = pin;
-        pinMode( m_pin, OUTPUT );
+    g_tVibeLeft.off();
+    g_tVibeFrontLeft.off();
+    g_tVibeFrontRight.off();
+    g_tVibeRight.off();
 
-        delete[] m_pMelody;
+    relayDisable();  // power-down sensors
 
-        m_nNoteCount = nCount;
-        if ( 0 < m_nNoteCount )
-        {
-            m_pMelody = new int[m_nNoteCount];
-            for ( int i = 0; i < m_nNoteCount; ++i )
-                m_pMelody[i] = pMelody[i];
-        }
-        m_tDelay.init( 1000 );
-        m_nDuration = nDuration;
-    }
+    // don't generate inactivity interrupts during sleep
+    adxlDrowsy();
 
-    void
-    start( unsigned long nTime )
-    {
-        if ( m_bPlaying )
-            m_nIndex = 0;
-        m_bPlaying = true;
-        play( nTime );
-    }
+    g_bSleepy = true;
+    g_tSleep.prepareSleep();
+    adxlAttachInterrupt();
+    g_tSleep.sleep();
+    g_tSleep.postSleep();
 
-    void
-    play( unsigned long nTime )
-    {
-        if ( m_bPlaying )
-        {
-            if ( m_tDelay.timesUp( nTime ) )
-            {
-                tone( m_pin, m_pMelody[m_nIndex], m_nDuration );
-                ++m_nIndex;
-                if ( m_nNoteCount <= m_nIndex )
-                {
-                    m_nIndex = 0;
-                    m_tDelay.reset();
-                }
-            }
-        }
-    }
+    // we wakeup here
+    g_bSleepy = false;
+    relayEnable();
+    adxlWakeup();
+    DEBUG_PRINTLN( "Wake Up" );
 
-    void
-    stop()
-    {
-        m_nIndex = 0;
-        m_bPlaying = false;
-        m_tDelay.reset();
-        tone( m_pin, 0, 0 );
-    }
+    // ? do we need to reintialize any of the sensors ?
+}
 
-protected:
-    uint8_t       m_pin;
-    int           m_nNoteCount;
-    int*          m_pMelody;
-    int           m_nIndex;
-    unsigned long m_nDuration;
-    YogiDelay     m_tDelay;
-    bool          m_bPlaying;
-};
-#endif  // false
 
+//=============== SONIC ==================
 
 class CAvgSonic
 {
@@ -183,7 +339,7 @@ public:
     CAvgSonic( YogiSonic& sonic, char* sName )
             : m_rSonic( sonic )
             , m_tDelay( 200 )
-            , m_nDistance( 0 )
+            , m_nDistCurrent( 0 )
             , m_nDistPrevious( 0 )
             , m_nIndex( 0 )
     {
@@ -207,7 +363,7 @@ public:
         for ( int i = 0; i < k_nSize; ++i )
             m_aDist[i] = 0;
         m_nIndex = 0;
-        m_nDistance = 0;
+        m_nDistCurrent = 0;
         m_nDistPrevious = 0;
     }
 
@@ -216,33 +372,47 @@ public:
     isDirty()
     {
         bool bDirty = false;
-        long dist = this->getDistanceCm();
-        if ( 1 < dist && dist != m_nDistance )
+        long distNew = this->getDistanceCm();
+        long distPrev = m_nDistPrevious;
+        m_nDistPrevious = m_nDistCurrent;
+        m_nDistCurrent = distNew;
+        if ( distPrev != distNew )
         {
             bDirty = true;
-            m_nDistance = dist;
         }
+        // else if ( distNew < 2 && m_nDistCurrent != m_nDistPrevious )
+        // {
+        //     bDirty = true;
+        //     m_nDistCurrent = m_nDistPrevious;
+        // }
+        // else
+        // {
+        //     bDirty = true;
+        //     m_nDistPrevious = distNew;
+        //     m_nDistCurrent = distNew;
+        // }
         return bDirty;
     }
 
 
-    long
+    inline long
     getDistance()
     {
-        if ( m_nDistance < 2 )
-        {
-            m_nDistance = getDistanceCm();
-        }
-        return m_nDistance;
+        // if ( m_nDistCurrent < 2 )
+        // {
+        //     m_nDistCurrent = this->getDistanceCm();
+        // }
+        return m_nDistCurrent;
     }
 
 
     long
     getDistanceCm()
     {
-        long dist = m_rSonic.getDistanceCm();
-#if false
-        int  nIndexPrevious = m_nIndex;
+#if true
+        return m_rSonic.getDistanceCm();
+#elif false
+        int nIndexPrevious = m_nIndex;
         if ( 0 == nIndexPrevious )
             nIndexPrevious = k_nSize - 1;
         long distPrevious = m_aDist[nIndexPrevious];
@@ -282,7 +452,7 @@ protected:
     char             m_sName[24];
     YogiSonic&       m_rSonic;
     YogiDelay        m_tDelay;
-    long             m_nDistance;
+    long             m_nDistCurrent;
     long             m_nDistPrevious;
     static const int k_nSize = 3;
     int              m_nIndex;
@@ -290,18 +460,11 @@ protected:
 };
 
 
-LedControl g_tVibeLeft( kPinVibeLeft );
-LedControl g_tVibeRight( kPinVibeRight );
-
-YogiDelay g_tSonicDelay;
-int       g_nSonicCycle = 0;
-long      g_nSonicCount = 0;
-
-
-YogiSonic g_tSonicLeft;
-YogiSonic g_tSonicFrontLeft;
-YogiSonic g_tSonicFrontRight;
-YogiSonic g_tSonicRight;
+YogiSonic g_tSonicLeft( kPinSonicTrigLeft, kPinSonicEchoLeft );
+YogiSonic g_tSonicFrontLeft( kPinSonicTrigFrontLeft, kPinSonicEchoFrontLeft );
+YogiSonic g_tSonicFrontRight(
+        kPinSonicTrigFrontRight, kPinSonicEchoFrontRight );
+YogiSonic g_tSonicRight( kPinSonicTrigRight, kPinSonicEchoRight );
 
 CAvgSonic g_tAvgLeft( g_tSonicLeft, "Left" );
 CAvgSonic g_tAvgFrontLeft( g_tSonicFrontLeft, "FrontLeft" );
@@ -309,183 +472,154 @@ CAvgSonic g_tAvgFrontRight( g_tSonicFrontRight, "FrontRight" );
 CAvgSonic g_tAvgRight( g_tSonicRight, "Right" );
 
 
-MPU9250 g_tIMU( Wire, 0x68 );  // relay
-Sleep   g_tSleep;
-
-
-const unsigned long k_uTimeIdle = 1000 * 30;  // idle time before sleep
-long                g_nPotValue = 20;         // distance in cm to alarm
-
-
-volatile bool g_bAccelInterrupt = false;  // did the accel cause interrupt
-unsigned long g_uCountInterrupt = 0;      // number of interrupts
-unsigned long g_uTimeInterrupt = 0;
-unsigned long g_uTimeCurrent = 0;
+int g_nPotDistValue = 20;  // distance in cm to alarm
+int g_nPotValueFront = g_nPotDistValue * 1.5;
 
 
 void
 sonicSetup()
 {
-    g_tSonicLeft.init( kPinSonicTrigLeft, kPinSonicEchoLeft );
-    g_tSonicFrontLeft.init( kPinSonicTrigFrontLeft, kPinSonicEchoFrontLeft );
-    g_tSonicFrontRight.init( kPinSonicTrigFrontRight, kPinSonicEchoFrontRight );
-    g_tSonicRight.init( kPinSonicTrigRight, kPinSonicEchoRight );
+    g_tSonicLeft.init();
+    g_tSonicFrontLeft.init();
+    g_tSonicFrontRight.init();
+    g_tSonicRight.init();
 
     g_nSonicCount = 0;
     g_nSonicCycle = 0;
-    g_tSonicDelay.init( 100 );
+    g_tSonicDelay.init( 1000 / 20 );  // 20 Hz
 }
 
 
-void
-interruptHandler()
+int
+potentiometerRead( uint8_t pin, long nRange )
 {
-    g_bAccelInterrupt = true;
-}
-
-
-void
-interruptAttach()
-{
-    attachInterrupt(
-            digitalPinToInterrupt( kPinAccel ), interruptHandler, CHANGE );
+    return max( 10, abs( (long)analogRead( pin ) * nRange / 1024 ) );
 }
 
 void
-enterSleep()
+updatePotValues()
 {
-    Serial.println( "Entering Sleep Mode" );
-    digitalWrite( kPinRelay, LOW );  // powerdown sensors
-    g_tVibeLeft.off();
-    g_tVibeRight.off();
-    delay( 500 );
+    pinMode( kPinPotDist, INPUT );
+    // g_nPotSensValue = potentiometerRead( kPinPotSens, 200 );
+    g_nPotDistValue = potentiometerRead( kPinPotDist, 100 );
+    g_nPotValueFront = g_nPotDistValue * 1.5;
 
+    DEBUG_VPRINT( "Pot Values: Side=", g_nPotDistValue );
+    DEBUG_VPRINTLN( "; Front=", g_nPotValueFront );
+    // DEBUG_VPRINTLN( "; Sensitivity=", g_nPotSensValue );
 
-    g_tSleep.pwrDownMode();
-    g_tSleep.sleepPinInterrupt( kPinAccel, RISING );
-
-    // we wakeup here
-    Serial.println( "Wake Up" );
-
-    digitalWrite( kPinRelay, HIGH );  // powerup sensors
-    // ? do we need to reintialize any of the sensors ?
-
-    interruptHandler();
-    interruptAttach();
-    g_uTimeCurrent = millis();
+    g_tSonicLeft.setMaxDistance( g_nPotDistValue );
+    g_tSonicFrontLeft.setMaxDistance( g_nPotValueFront );
+    g_tSonicFrontRight.setMaxDistance( g_nPotValueFront );
+    g_tSonicRight.setMaxDistance( g_nPotDistValue );
 }
 
 
-long
-potentiometerRead()
+bool
+isHorizontal()
 {
-    return max( 10, abs( (long)analogRead( kPinPot ) * 400 / 1023 ) );
+    int x, y, z;
+    adxl.readAccel( &x, &y, &z );
+    return abs( z ) < 100 ? true : false;
 }
 
 
-void
-setup()
+bool g_bLayingDown = false;
+
+bool
+isLayingdown()
 {
-    Serial.begin( 115200 );
-    while ( ! Serial )
-        ;  // wait for Serial to startup
-
-
-    pinMode( kPinRelay, OUTPUT );
-    digitalWrite( kPinRelay, HIGH );  // turn on relay
-    // ? Do we need to delay or wait to make sure the relay is active ?
-    delay( 500 );
-
-
-    sonicSetup();
-
-    g_tVibeLeft.init();
-    g_tVibeRight.init();
-    //pinMode( kPinPot, INPUT );
-    g_nPotValue = potentiometerRead();
-    Serial.print( "pot=" );
-    Serial.println( g_nPotValue );
-
-
-    int nStatus = g_tIMU.begin();
-    if ( nStatus < 0 )
+    if ( isHorizontal() )
     {
-        Serial.println( "IMU initialization unsuccessful" );
-        Serial.print( "status=" );
-        Serial.println( nStatus, HEX );
-    }
-    nStatus = g_tIMU.enableWakeOnMotion( 75, MPU9250::LP_ACCEL_ODR_62_50HZ );
-    if ( nStatus < 0 )
-    {
-        Serial.println( "IMU enable wake on motion failure" );
-        Serial.print( "status=" );
-        Serial.println( nStatus, HEX );
-    }
-
-
-    g_bAccelInterrupt = false;
-    pinMode( kPinAccel, INPUT );
-    digitalWrite( kPinAccel, LOW );
-    interruptAttach();
-    g_uTimeInterrupt = millis();
-
-    g_uTimeCurrent = millis();
-}
-
-
-void
-loop()
-{
-    g_uTimeCurrent = millis();
-    if ( g_bAccelInterrupt )
-    {
-        g_bAccelInterrupt = false;
-        g_uTimeInterrupt = millis();
-        Serial.print( "Interrupt: " );
-        Serial.println( ++g_uCountInterrupt );
-        g_nSonicCount = 0;
+        ++g_uLaying;
+        return 5 < g_uLaying ? true : false;
     }
     else
     {
-        if ( k_uTimeIdle < g_uTimeCurrent - g_uTimeInterrupt )
-        {
-            enterSleep();
+        g_uLaying = 0;
+        return false;
+    }
+}
 
-            // stuff to do when we wake up
-            g_nPotValue = potentiometerRead();
-            g_uCountInterrupt = 0;
+
+//=============== STATES ==================
+
+void
+orientationUnknown()
+{
+    g_eOrientation = isHorizontal() ? OR_HORIZONTAL : OR_VERTICAL;
+}
+
+void
+orientationVertical()
+{
+    if ( isLayingdown() )
+    {
+        g_eOrientation = OR_HORIZONTAL;
+    }
+    else
+    {
+        uint8_t mInterrupts = 0;
+        g_uTimeCurrent = millis();
+        if ( 0 < g_uCountInterrupt )
+        {
+            mInterrupts = adxlGetInterrupts();
             g_uTimeInterrupt = millis();
-            g_tAvgLeft.reset();
-            g_tAvgFrontLeft.reset();
-            g_tAvgFrontRight.reset();
-            g_tAvgRight.reset();
-            g_nSonicCycle = 0;
-            g_nSonicCount = 0;
         }
         else
+        {
+            if ( k_uDelaySleep < abs( g_uTimeCurrent - g_uTimeInterrupt ) )
+            {
+                adxl.getInterruptSource();
+                g_uTimeInterrupt = g_uTimeCurrent;
+                mInterrupts = ADXL_M_INACTIVITY;
+            }
+        }
+        // g_uCountInterrupt = 0;
+
+        if ( 0 != mInterrupts )
+        {
+            adxlDataHandler( mInterrupts );
+            if ( 0 != ( mInterrupts & ADXL_M_INACTIVITY ) )
+            {
+                WatchDog::stop();
+                enterSleep();
+
+                // stuff to do when we wake up
+                g_nActivity = 0;
+                updatePotValues();
+                g_tAvgLeft.reset();
+                g_tAvgFrontLeft.reset();
+                g_tAvgFrontRight.reset();
+                g_tAvgRight.reset();
+                g_nSonicCycle = 0;
+                g_nSonicCount = 0;
+            }
+            g_uTimeInterrupt = millis();
+        }
+        else  //if ( ! g_bSleepy )
         {
             bool bDirty = false;
             if ( g_tSonicDelay.timesUp( g_uTimeCurrent ) )
             {
-                switch ( g_nSonicCycle )
+                switch ( g_nSonicCycle++ )
                 {
                 case 0:
-                    bDirty = g_tAvgFrontLeft.isDirty();
-                    break;
-                case 1:
-                    bDirty = g_tAvgFrontRight.isDirty();
-                    break;
-                case 2:
                     bDirty = g_tAvgLeft.isDirty();
                     break;
-                case 3:
+                case 1:
                     bDirty = g_tAvgRight.isDirty();
+                    break;
+                case 2:
+                    bDirty = g_tAvgFrontLeft.isDirty();
+                    break;
+                case 3:
+                    bDirty = g_tAvgFrontRight.isDirty();
                     break;
                 default:
                     g_nSonicCycle = 0;
                     break;
                 }
-                ++g_nSonicCycle;
             }
 
             if ( bDirty )
@@ -496,42 +630,320 @@ loop()
                 long nR = g_tAvgRight.getDistance();
 
                 ++g_nSonicCount;
-                Serial.print( "L = " );
-                Serial.print( nL );
-                Serial.print( ";  FL = " );
-                Serial.print( nFL );
-                Serial.print( ";  FR = " );
-                Serial.print( nFR );
-                Serial.print( ";  R = " );
-                Serial.print( nR );
-                Serial.print( "; pot = " );
-                Serial.print( g_nPotValue );
-                Serial.print( "; #" );
-                Serial.println( g_nSonicCount );
+                DEBUG_VPRINT( "L = ", nL );
+                DEBUG_VPRINT( ";  FL = ", nFL );
+                DEBUG_VPRINT( ";  FR = ", nFR );
+                DEBUG_VPRINT( ";  R = ", nR );
+                DEBUG_VPRINT( "; pS = ", g_nPotDistValue );
+                DEBUG_VPRINT( "; pF = ", g_nPotValueFront );
+                DEBUG_VPRINTLN( "; #", g_nSonicCount );
 
-                bDirty = false;
-                if ( ( 1 < nL && nL < g_nPotValue )  //
-                        || ( 1 < nFL && nFL < g_nPotValue ) )
+                // both sides are within range
+                // probably going through door
+                if ( 0 < nL && 0 < nR )
                 {
-                    g_tVibeLeft.on();
-                    bDirty = true;
+                    nL = 0;
+                    nFL = 0;
+                    nFR = 0;
+                    nR = 0;
                 }
-                else
+
+                // bDirty = false;
+                bool    bVibeLeft = false;
+                bool    bVibeFrontLeft = false;
+                bool    bVibeFrontRight = false;
+                bool    bVibeRight = false;
+                uint8_t nVibeLeftValue = 0;
+                uint8_t nVibeFrontLeftValue = 0;
+                uint8_t nVibeFrontRightValue = 0;
+                uint8_t nVibeRightValue = 0;
+
+                if ( 1 < nL && nL <= g_nPotDistValue )
                 {
+                    bVibeLeft = true;
+                    nVibeLeftValue = map( nL, g_nPotDistValue, 1, 1, 255 );
+                }
+                if ( 1 < nFL && nFL <= g_nPotValueFront )
+                {
+                    bVibeFrontLeft = true;
+                    nVibeFrontLeftValue
+                            = map( nFL, g_nPotValueFront, 1, 1, 255 );
+                }
+
+                if ( 1 < nFR && nFR <= g_nPotValueFront )
+                {
+                    bVibeFrontRight = true;
+                    nVibeFrontRightValue
+                            = map( nFR, g_nPotValueFront, 1, 1, 255 );
+                }
+
+                if ( 1 < nR && nR <= g_nPotDistValue )
+                {
+                    bVibeRight = true;
+                    nVibeRightValue = map( nR, g_nPotDistValue, 1, 1, 255 );
+                }
+                // DEBUG_VPRINT( "vL=", nVibeLeftValue );
+                // DEBUG_VPRINTLN( "; vR=", nVibeRightValue );
+
+
+                if ( bVibeLeft )
+                    g_tVibeLeft.on( nVibeLeftValue );
+                else
                     g_tVibeLeft.off();
-                }
 
-                if ( ( 1 < nFR && nFR < g_nPotValue )  //
-                        || ( 1 < nR && nR < g_nPotValue ) )
-                {
-                    g_tVibeRight.on();
-                    bDirty = true;
-                }
+                if ( bVibeFrontLeft )
+                    g_tVibeFrontLeft.on( nVibeFrontLeftValue );
                 else
-                {
+                    g_tVibeFrontLeft.off();
+
+                if ( bVibeFrontRight )
+                    g_tVibeFrontRight.on( nVibeFrontRightValue );
+                else
+                    g_tVibeFrontRight.off();
+
+                if ( bVibeRight )
+                    g_tVibeRight.on( nVibeRightValue );
+                else
                     g_tVibeRight.off();
-                }
             }
         }
     }
+}
+
+
+void
+orientationHorizontal()
+{
+    // Check if we are laying-down. If we are not
+    // laying-down then switch modes to OR_VERTICAL.
+    if ( isLayingdown() )
+    {
+        if ( ! g_bActiveLaydown )
+        {
+            g_bActiveLaydown = true;
+
+            watchdogSleep();
+        }
+    }
+    else
+    {
+        if ( g_bActiveLaydown )
+        {
+            g_bActiveLaydown = false;
+            watchdogWakeup();
+            g_eOrientation = OR_VERTICAL;
+        }
+    }
+}
+
+
+//================== SETUP =====================
+void
+setup()
+{
+    DEBUG_OPEN();
+
+    relayEnable();  // power up sensors
+
+    updatePotValues();
+
+    // adxl = ADXL345();
+
+    adxlSetup( k_uAdxlDelaySleep );
+    adxlAttachInterrupt();
+
+
+    WatchDog::init( watchdogIntHandler, OVF_4000MS );
+    WatchDog::stop();
+
+
+    sonicSetup();
+
+    g_tVibeLeft.init();
+    g_tVibeFrontLeft.init();
+    g_tVibeFrontRight.init();
+    g_tVibeRight.init();
+    //pinMode( kPinPotDist, INPUT );
+    // DEBUG_PRINT( "pot=" );
+    // DEBUG_PRINTLN( g_nPotValue );
+
+    g_bLayingDown = false;
+
+
+    g_uTimeInterrupt = millis();
+    g_uTimeCurrent = millis();
+    g_uTimePrevious = 0;
+
+    g_eOrientation = isHorizontal() ? OR_HORIZONTAL : OR_VERTICAL;
+}
+
+
+//================= LOOP =======================
+void
+loop()
+{
+    if ( g_bWatchDogInterrupt )
+    {
+        g_bWatchDogInterrupt = false;
+        watchdogHandler();
+    }
+    else
+    {
+        switch ( g_eOrientation )
+        {
+        case OR_VERTICAL:
+            orientationVertical();
+            break;
+        case OR_HORIZONTAL:
+            orientationHorizontal();
+            break;
+        case OR_UNKNOWN:
+        default:
+            orientationUnknown();
+            break;
+        }
+    }
+
+#if false
+    g_uTimeCurrent = millis();
+    uint8_t mInterrupts = adxlGetInterrupts();
+
+    if ( 0 != mInterrupts )
+    {
+#    if defined( _DEBUG )
+        adxlDataHandler( mInterrupts );
+#    endif
+        if ( 0 != ( mInterrupts & ADXL_M_INACTIVITY ) )
+        {
+            enterSleep();
+            // stuff to do when we wake up
+            digitalWrite( k_pinRelay, HIGH );  // turn on relay
+            delay( 400 );                      // wait for relay
+            g_nActivity = 0;
+            updatePotValues();
+            g_tAvgLeft.reset();
+            g_tAvgFrontLeft.reset();
+            g_tAvgFrontRight.reset();
+            g_tAvgRight.reset();
+            g_nSonicCycle = 0;
+            g_nSonicCount = 0;
+        }
+        else
+        {
+            int x, y, z;
+            adxl.readAccel( &x, &y, &z );
+            int axy = abs( x ) + abs( y );
+            int az = abs( z );
+            if ( az < axy )  // laying down
+            {
+                if ( ! g_bLayingDown )
+                {
+                    g_bLayingDown = true;
+                    digitalWrite( k_pinRelay, LOW );
+                }
+                // NEEDS_WORK: should set timer and go to sleep
+            }
+            else
+            {
+                if ( g_bLayingDown )
+                {
+                    g_bLayingDown = false;
+                    digitalWrite( k_pinRelay, HIGH );
+                    delay( 400 );  // wait for relay
+                }
+            }
+        }
+        g_uTimeInterrupt = millis();
+    }
+    else
+    {
+        bool bDirty = false;
+        if ( g_tSonicDelay.timesUp( g_uTimeCurrent ) )
+        {
+            switch ( g_nSonicCycle++ )
+            {
+            case 0:
+                bDirty = g_tAvgLeft.isDirty();
+                break;
+            case 1:
+                bDirty = g_tAvgRight.isDirty();
+                break;
+            case 2:
+                bDirty = g_tAvgFrontLeft.isDirty();
+                break;
+            case 3:
+                bDirty = g_tAvgFrontRight.isDirty();
+                break;
+            default:
+                g_nSonicCycle = 0;
+                break;
+            }
+        }
+
+        if ( bDirty )
+        {
+            long nL = g_tAvgLeft.getDistance();
+            long nFL = g_tAvgFrontLeft.getDistance();
+            long nFR = g_tAvgFrontRight.getDistance();
+            long nR = g_tAvgRight.getDistance();
+
+            // both sides are within range
+            // probably going through door
+            if ( 0 < nL && 0 < nR )
+            {
+                nL = 0;
+                nR = 0;
+            }
+
+            // ++g_nSonicCount;
+            // DEBUG_VPRINT( "L = ", nL );
+            // DEBUG_VPRINT( ";  FL = ", nFL );
+            // DEBUG_VPRINT( ";  FR = ", nFR );
+            // DEBUG_VPRINT( ";  R = ", nR );
+            // DEBUG_VPRINT( "; pot = ", g_nPotValue );
+            // DEBUG_VPRINTLN( "; #", g_nSonicCount );
+
+            // bDirty = false;
+            bool    bVibeLeft = false;
+            bool    bVibeRight = false;
+            uint8_t nVibeLeftValue = 0;
+            uint8_t nVibeRightValue = 0;
+            if ( 1 < nL && nL < g_nPotDistValue )
+            {
+                bVibeLeft = true;
+                nVibeLeftValue = map( nL, g_nPotDistValue, 1, 1, 255 );
+            }
+            if ( 1 < nFL && nFL < g_nPotValueFront )
+            {
+                bVibeLeft = true;
+                nVibeLeftValue = map( nFL, g_nPotValueFront, 1, 1, 255 );
+            }
+
+            if ( 1 < nR && nR < g_nPotDistValue )
+            {
+                bVibeRight = true;
+                nVibeRightValue = map( nR, g_nPotDistValue, 1, 1, 255 );
+            }
+            if ( 1 < nFR && nFR < g_nPotValueFront )
+            {
+                bVibeRight = true;
+                nVibeRightValue = map( nFR, g_nPotValueFront, 1, 1, 255 );
+            }
+
+            // DEBUG_VPRINT( "vL=", nVibeLeftValue );
+            // DEBUG_VPRINTLN( "; vR=", nVibeRightValue );
+
+
+            if ( bVibeLeft )
+                g_tVibeLeft.on( nVibeLeftValue );
+            else
+                g_tVibeLeft.off();
+
+            if ( bVibeRight )
+                g_tVibeRight.on( nVibeRightValue );
+            else
+                g_tVibeRight.off();
+        }
+    }
+#endif
 }
