@@ -1,6 +1,8 @@
 {
     "env": {
-        "SKETCHBOOKS": "C:\\Users\\johng\\LocalDocuments\\Development\\Arduino-Sketchbooks"
+        "SKETCHBOOKS": "C:\\Users\\johng\\LocalDocuments\\Development\\Arduino-Sketchbooks",
+        "SKETCHLIBS": "${env:SKETCHBOOKS}\\libraries",
+        "ARDUINOPACKAGES": "C:\\Users\\johng\\AppData\\Local\\Arduino15\\packages"
     },
     "configurations": [
         {
@@ -18,13 +20,15 @@
                 "C:\\Arduino\\tools\\**",
                 "C:\\Arduino\\libraries\\**",
                 "C:\\Arduino\\libraries\\**\\**\\**",
-                "${env:SKETCHBOOKS}\\libraries\\**",
-                "${env:SKETCHBOOKS}\\libraries\\**\\**",
-                "${env:SKETCHBOOKS}\\libraries\\YogiDelay\\src",
-                "${env:SKETCHBOOKS}\\libraries\\YogiPitches\\src",
-                "${env:SKETCHBOOKS}\\libraries\\YogiSonic\\src",
-                "${env:SKETCHBOOKS}\\libraries\\MPU9250\\src",
-                "${env:SKETCHBOOKS}\\libraries\\Sleep_n0m1"
+                "${env:SKETCHLIBS}\\**",
+                "${env:SKETCHLIBS}\\**\\**",
+                "${env:SKETCHLIBS}\\YogiDelay\\src",
+                "${env:SKETCHLIBS}\\YogiPitches\\src",
+                "${env:SKETCHLIBS}\\YogiSonic\\src",
+                "${env:SKETCHLIBS}\\SparkFun_ADXL345_Arduino_Library\\src",
+                "${env:SKETCHLIBS}\\Yogi_ADXL345\\src",
+                "${env:SKETCHLIBS}\\WatchDog",
+                "${env:SKETCHLIBS}\\YogiHeaders"
             ],
             "forcedInclude": [
                 "C:\\Arduino\\hardware\\arduino\\avr\\cores\\arduino\\Arduino.h"
