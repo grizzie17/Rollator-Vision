@@ -215,6 +215,7 @@ watchdogHandler()
 
 //============== LED ===============
 
+#if false
 class LedControl
 {
 public:
@@ -258,6 +259,8 @@ protected:
     uint8_t m_val;
     uint8_t m_pin;
 };
+
+#endif  // false
 
 
 //=========== VIBE ===========
@@ -479,42 +482,7 @@ public:
     long
     getDistanceCm()
     {
-#if true
         return m_rSonic.getDistanceCm();
-#elif false
-        int nIndexPrevious = m_nIndex;
-        if ( 0 == nIndexPrevious )
-            nIndexPrevious = k_nSize - 1;
-        long distPrevious = m_aDist[nIndexPrevious];
-        if ( 1 < distPrevious && abs( dist - distPrevious ) <= 2 )
-            dist = distPrevious;
-        m_aDist[m_nIndex] = dist;
-        if ( k_nSize <= ++m_nIndex )
-        {
-            m_nIndex = 0;
-        }
-        dist = 0;
-        int j = 0;
-        for ( int i = 0; i < k_nSize; ++i )
-        {
-            if ( 1 < m_aDist[i] )
-            {
-                dist += m_aDist[i];
-                ++j;
-            }
-        }
-
-        if ( 0 < j )
-            return dist / j;
-        else
-            return 0;
-#else
-        long distPrevious = m_nDistPrevious;
-        if ( 1 < distPrevious && abs( dist - distPrevious ) <= 4 )
-            dist = distPrevious;
-        m_nDistPrevious = dist;
-        return dist;
-#endif
     }
 
 
@@ -543,7 +511,7 @@ CAvgSonic g_tAvgRight( g_tSonicRight, "Right" );
 
 
 int g_nPotValueSide = 20;  // distance in cm to alarm
-int g_nPotValueFront = g_nPotValueSide * 1.5;
+int g_nPotValueFront = g_nPotValueSide * 3 / 2;
 
 
 void
@@ -575,7 +543,7 @@ updatePotValues()
 {
     pinMode( kPinPotDist, INPUT );
     g_nPotValueSide = potentiometerRead( kPinPotDist, 100 );
-    g_nPotValueFront = g_nPotValueSide * 1.5;
+    g_nPotValueFront = g_nPotValueSide * 3 / 2;
 
     DEBUG_VPRINT( "Pot Values: Side=", g_nPotValueSide );
     DEBUG_VPRINTLN( "; Front=", g_nPotValueFront );
@@ -847,25 +815,24 @@ setup()
     adxlSetup( k_uAdxlDelaySleep );
     adxlAttachInterrupt();
 
-
-    WatchDog::init( watchdogIntHandler, OVF_4000MS );
-    WatchDog::stop();
-
-
     sonicSetup();
 
     g_tVibeLeft.init();
     g_tVibeRight.init();
     g_tVibeDelay.init( 250 );
 
-    g_bLayingDown = false;
 
+    g_bWatchDogInterrupt = false;
+    WatchDog::init( watchdogIntHandler, OVF_4000MS );
+    WatchDog::stop();
+
+    g_bLayingDown = false;
+    g_uLaying = 0;
+    g_eOrientation = isHorizontal() ? OR_HORIZONTAL : OR_VERTICAL;
 
     g_uTimeInterrupt = millis();
     g_uTimeCurrent = millis();
     g_uTimePrevious = 0;
-
-    g_eOrientation = isHorizontal() ? OR_HORIZONTAL : OR_VERTICAL;
 }
 
 
@@ -894,147 +861,4 @@ loop()
             break;
         }
     }
-
-#if false
-    g_uTimeCurrent = millis();
-    uint8_t mInterrupts = adxlGetInterrupts();
-
-    if ( 0 != mInterrupts )
-    {
-#    if defined( _DEBUG )
-        adxlDataHandler( mInterrupts );
-#    endif
-        if ( 0 != ( mInterrupts & ADXL_M_INACTIVITY ) )
-        {
-            enterSleep();
-            // stuff to do when we wake up
-            digitalWrite( k_pinRelay, HIGH );  // turn on relay
-            delay( 400 );                      // wait for relay
-            g_nActivity = 0;
-            updatePotValues();
-            g_tAvgLeft.reset();
-            g_tAvgFrontLeft.reset();
-            g_tAvgFrontRight.reset();
-            g_tAvgRight.reset();
-            g_nSonicCycle = 0;
-            g_nSonicCount = 0;
-        }
-        else
-        {
-            int x, y, z;
-            adxl.readAccel( &x, &y, &z );
-            int axy = abs( x ) + abs( y );
-            int az = abs( z );
-            if ( az < axy )  // laying down
-            {
-                if ( ! g_bLayingDown )
-                {
-                    g_bLayingDown = true;
-                    digitalWrite( k_pinRelay, LOW );
-                }
-                // NEEDS_WORK: should set timer and go to sleep
-            }
-            else
-            {
-                if ( g_bLayingDown )
-                {
-                    g_bLayingDown = false;
-                    digitalWrite( k_pinRelay, HIGH );
-                    delay( 400 );  // wait for relay
-                }
-            }
-        }
-        g_uTimeInterrupt = millis();
-    }
-    else
-    {
-        bool bDirty = false;
-        if ( g_tSonicDelay.timesUp( g_uTimeCurrent ) )
-        {
-            switch ( g_nSonicCycle++ )
-            {
-            case 0:
-                bDirty = g_tAvgLeft.isDirty();
-                break;
-            case 1:
-                bDirty = g_tAvgRight.isDirty();
-                break;
-            case 2:
-                bDirty = g_tAvgFrontLeft.isDirty();
-                break;
-            case 3:
-                bDirty = g_tAvgFrontRight.isDirty();
-                break;
-            default:
-                g_nSonicCycle = 0;
-                break;
-            }
-        }
-
-        if ( bDirty )
-        {
-            long nL = g_tAvgLeft.getDistance();
-            long nFL = g_tAvgFrontLeft.getDistance();
-            long nFR = g_tAvgFrontRight.getDistance();
-            long nR = g_tAvgRight.getDistance();
-
-            // both sides are within range
-            // probably going through door
-            if ( 0 < nL && 0 < nR )
-            {
-                nL = 0;
-                nR = 0;
-            }
-
-            // ++g_nSonicCount;
-            // DEBUG_VPRINT( "L = ", nL );
-            // DEBUG_VPRINT( ";  FL = ", nFL );
-            // DEBUG_VPRINT( ";  FR = ", nFR );
-            // DEBUG_VPRINT( ";  R = ", nR );
-            // DEBUG_VPRINT( "; pot = ", g_nPotValue );
-            // DEBUG_VPRINTLN( "; #", g_nSonicCount );
-
-            // bDirty = false;
-            bool    bVibeLeft = false;
-            bool    bVibeRight = false;
-            uint8_t nVibeValueLeft = 0;
-            uint8_t nVibeValueRight = 0;
-            if ( 1 < nL && nL < g_nPotValueSide )
-            {
-                bVibeLeft = true;
-                nVibeValueLeft = map( nL, g_nPotValueSide, 1, 1, 255 );
-            }
-            if ( 1 < nFL && nFL < g_nPotValueFront )
-            {
-                bVibeLeft = true;
-                nVibeValueLeft = map( nFL, g_nPotValueFront, 1, 1, 255 );
-            }
-
-            if ( 1 < nR && nR < g_nPotValueSide )
-            {
-                bVibeRight = true;
-                nVibeValueRight = map( nR, g_nPotValueSide, 1, 1, 255 );
-            }
-            if ( 1 < nFR && nFR < g_nPotValueFront )
-            {
-                bVibeRight = true;
-                nVibeValueRight = map( nFR, g_nPotValueFront, 1, 1, 255 );
-            }
-
-            // DEBUG_VPRINT( "vL=", nVibeValueLeft );
-            // DEBUG_VPRINTLN( "; vR=", nVibeValueRight );
-
-
-            if ( bVibeLeft )
-                g_tVibeLeft.on( nVibeValueLeft );
-            else
-                g_tVibeLeft.off();
-
-            if ( bVibeRight )
-                g_tVibeRight.on( nVibeValueRight );
-            else
-                g_tVibeRight.off();
-        }
-    }
-#endif
 }
