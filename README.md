@@ -36,8 +36,25 @@ one facing left, one facing right.
 
 ## Power ##
 
-|   mA | Notes             |
-| ---: | ----------------- |
-| 19.2 | Batteries to Buck |
-|  3.6 | Buck to Main      |
-| 15.6 | Buck load         |
+|   mA | Notes                      |
+| ---: | -------------------------- |
+| 19.2 | Batteries to Buck          |
+|  3.6 | Buck to Main               |
+| 15.6 | Buck load                  |
+|      |                            |
+| 87.0 | Battery to Pololu (Active) |
+|  2.5 | Battery to Pololu (Sleep)  |
+|  3.6 | Pololu to Main ?????       |
+
+Question: Why is the "Pololu to Main" more than the "Battery to Pololu"?
+
+
+## Timed Test ##
+
+| mA   | Date/Time   |
+| ---- | ----------- |
+| 8.39 | 7/28 9:40am |
+| 8.34 | 7/28 1:50pm |
+| 8.32 | 7/28 9:55pm |
+| 8.31 | 7/29 7:49am |
+| 8.30 | 7/29 4:31pm |
