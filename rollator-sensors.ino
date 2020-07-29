@@ -11,38 +11,37 @@
 #include <YogiSleep.h>
 #include <YogiSonic.h>
 
-const uint8_t k_pinINT = 2;  // INT0
-
-
-const uint8_t kPinVibeRight = 3;
-const uint8_t kPinVibeFrontRight = 5;
-const uint8_t kPinVibeFrontLeft = 4;
-const uint8_t kPinVibeLeft = 6;
-
-const uint8_t kPinSonicEchoRight = 7;
-const uint8_t kPinSonicTrigRight = 7;
-
-const uint8_t kPinSonicEchoFrontRight = 8;
-const uint8_t kPinSonicTrigFrontRight = 8;
-
-const uint8_t kPinSonicEchoFrontLeft = 9;
-const uint8_t kPinSonicTrigFrontLeft = 9;
-
-const uint8_t kPinSonicEchoLeft = 10;
-const uint8_t kPinSonicTrigLeft = 10;
-
-const uint8_t k_pinRelay = 11;
-
-const uint8_t kPinPotDist = A0;
-const uint8_t kPinSDA = A4;
-const uint8_t kPinSCL = A5;
-
 
 #ifndef __asm__
 #    ifdef _MSC_VER
 #        define __asm__ __asm
 #    endif
 #endif
+
+
+const uint8_t k_pinINT = 2;  // INT0
+const uint8_t k_pinRelay = 3;
+
+
+const uint8_t kPinVibeRight = 11;  // PWM
+const uint8_t kPinVibeLeft = 6;    // PWM
+
+const uint8_t kPinSonicEchoRight = 12;
+const uint8_t kPinSonicTrigRight = 12;
+
+const uint8_t kPinSonicEchoFrontRight = 10;
+const uint8_t kPinSonicTrigFrontRight = 10;
+
+const uint8_t kPinSonicEchoFrontLeft = 7;
+const uint8_t kPinSonicTrigFrontLeft = 7;
+
+const uint8_t kPinSonicEchoLeft = 5;
+const uint8_t kPinSonicTrigLeft = 5;
+
+
+const uint8_t kPinPotDist = A0;
+const uint8_t kPinSDA = A4;
+const uint8_t kPinSCL = A5;
 
 
 typedef enum orientation_t
@@ -128,7 +127,6 @@ adxlDrowsy()
 
     adxl.setInterruptMask( k_maskActivity );
     adxl.setLowPower( true );
-    // adxlAttachInterrupt();
 }
 
 
@@ -264,38 +262,127 @@ protected:
 
 //=========== VIBE ===========
 
+typedef struct VibeItem
+{
+    int  nDuration;
+    bool bOn;
+} VibeItem;
+
+// following arrays contain millisecond times for on..off
+VibeItem g_aVibeFront[] = { { 1000, true }, { 1000, false } };
+VibeItem g_aVibeSide[] = { { 250, true }, { 750, false } };
+VibeItem g_aVibeBoth[] = { { 1000, true }, { 500, false }, { 250, true },
+    { 500, false }, { 250, true }, { 500, false } };
+
+int g_nVibeCountFront = sizeof( g_aVibeFront ) / sizeof( g_aVibeFront[0] );
+int g_nVibeCountSide = sizeof( g_aVibeSide ) / sizeof( g_aVibeSide[0] );
+int g_nVibeCountBoth = sizeof( g_aVibeBoth ) / sizeof( g_aVibeBoth[0] );
+
+YogiDelay g_tVibeDelay;
+
 class VibeControl
 {
 public:
-    VibeControl()
-            : m_pin( 0 )
+    VibeControl( uint8_t pin )
+            : m_pin( pin )
+            , m_val( 0 )
+            , m_tDelay()
     {}
 
 public:
     void
-    init( uint8_t pin )
+    init()
     {
-        m_pin = pin;
+        pinMode( m_pin, OUTPUT );
+        m_val = 0;
+        m_tDelay.init( 1000 );
+    }
+
+
+    void
+    reset()
+    {
+        m_tDelay.reset();
     }
 
     void
-    start()
-    {}
+    setPattern( int nVibeCount, VibeItem* pVibeList )
+    {
+        if ( pVibeList != m_aVibeList )
+        {
+            m_aVibeList = pVibeList;
+            m_nCountVibe = nVibeCount;
+            m_index = 0;
+        }
+    }
 
     void
-    stop()
-    {}
+    on( uint8_t value )
+    {
+        if ( m_val != value )
+        {
+            m_val = value;
+        }
+    }
 
+    void
+    cycle( unsigned long nTimeCurrent = 0 )
+    {
+        if ( 0 < m_val )
+        {
+            if ( m_tDelay.timesUp( nTimeCurrent ) )
+            {
+                if ( m_aVibeList[m_index].bOn )
+                    analogWrite( m_pin, m_val );
+                else
+                    analogWrite( m_pin, 0 );
+                m_tDelay.newDelay( m_aVibeList[m_index].nDuration );
+                ++m_index;
+                if ( m_nCountVibe <= m_index )
+                    m_index = 0;
+            }
+        }
+    }
+
+    void
+    off()
+    {
+        if ( 0 < m_val )
+        {
+            m_val = 0;
+            m_index = 0;
+            m_aVibeList = nullptr;
+            analogWrite( m_pin, m_val );
+        }
+    }
+
+    void
+    sync( VibeControl& other )
+    {
+        if ( m_aVibeList == other.m_aVibeList )
+        {
+            if ( m_index != other.m_index )
+            {
+                m_index = other.m_index;
+                int nDelay = other.m_tDelay.getDelay();
+                m_tDelay.newDelay( nDelay );
+                other.m_tDelay.newDelay( nDelay );
+            }
+        }
+    }
 
 protected:
-    uint8_t m_pin;
+    uint8_t   m_pin;
+    uint8_t   m_val;
+    YogiDelay m_tDelay;
+    int       m_nCountVibe = 0;
+    VibeItem* m_aVibeList = nullptr;
+    int       m_index = 0;
 };
 
 
-LedControl g_tVibeLeft( kPinVibeLeft );
-LedControl g_tVibeFrontLeft( kPinVibeFrontLeft );
-LedControl g_tVibeFrontRight( kPinVibeFrontRight );
-LedControl g_tVibeRight( kPinVibeRight );
+VibeControl g_tVibeLeft( kPinVibeLeft );
+VibeControl g_tVibeRight( kPinVibeRight );
 
 //============== SLEEP ===============
 
@@ -306,8 +393,6 @@ enterSleep()
     DEBUG_DELAY( 300 );
 
     g_tVibeLeft.off();
-    g_tVibeFrontLeft.off();
-    g_tVibeFrontRight.off();
     g_tVibeRight.off();
 
     relayDisable();  // power-down sensors
@@ -380,17 +465,6 @@ public:
         {
             bDirty = true;
         }
-        // else if ( distNew < 2 && m_nDistCurrent != m_nDistPrevious )
-        // {
-        //     bDirty = true;
-        //     m_nDistCurrent = m_nDistPrevious;
-        // }
-        // else
-        // {
-        //     bDirty = true;
-        //     m_nDistPrevious = distNew;
-        //     m_nDistCurrent = distNew;
-        // }
         return bDirty;
     }
 
@@ -398,10 +472,6 @@ public:
     inline long
     getDistance()
     {
-        // if ( m_nDistCurrent < 2 )
-        // {
-        //     m_nDistCurrent = this->getDistanceCm();
-        // }
         return m_nDistCurrent;
     }
 
@@ -472,8 +542,8 @@ CAvgSonic g_tAvgFrontRight( g_tSonicFrontRight, "FrontRight" );
 CAvgSonic g_tAvgRight( g_tSonicRight, "Right" );
 
 
-int g_nPotDistValue = 20;  // distance in cm to alarm
-int g_nPotValueFront = g_nPotDistValue * 1.5;
+int g_nPotValueSide = 20;  // distance in cm to alarm
+int g_nPotValueFront = g_nPotValueSide * 1.5;
 
 
 void
@@ -484,9 +554,13 @@ sonicSetup()
     g_tSonicFrontRight.init();
     g_tSonicRight.init();
 
+#define SONIC_SENSOR_TOTAL 4  // count of ultrasonic sensors
+#define SONIC_SENSOR_HZ    4  // Hz rate per sensor
+#define SONIC_SENSORS_HZ   ( SONIC_SENSOR_TOTAL * SONIC_SENSOR_HZ )
+
     g_nSonicCount = 0;
     g_nSonicCycle = 0;
-    g_tSonicDelay.init( 1000 / 20 );  // 20 Hz
+    g_tSonicDelay.init( 1000 / SONIC_SENSORS_HZ );
 }
 
 
@@ -500,18 +574,16 @@ void
 updatePotValues()
 {
     pinMode( kPinPotDist, INPUT );
-    // g_nPotSensValue = potentiometerRead( kPinPotSens, 200 );
-    g_nPotDistValue = potentiometerRead( kPinPotDist, 100 );
-    g_nPotValueFront = g_nPotDistValue * 1.5;
+    g_nPotValueSide = potentiometerRead( kPinPotDist, 100 );
+    g_nPotValueFront = g_nPotValueSide * 1.5;
 
-    DEBUG_VPRINT( "Pot Values: Side=", g_nPotDistValue );
+    DEBUG_VPRINT( "Pot Values: Side=", g_nPotValueSide );
     DEBUG_VPRINTLN( "; Front=", g_nPotValueFront );
-    // DEBUG_VPRINTLN( "; Sensitivity=", g_nPotSensValue );
 
-    g_tSonicLeft.setMaxDistance( g_nPotDistValue );
+    g_tSonicLeft.setMaxDistance( g_nPotValueSide );
     g_tSonicFrontLeft.setMaxDistance( g_nPotValueFront );
     g_tSonicFrontRight.setMaxDistance( g_nPotValueFront );
-    g_tSonicRight.setMaxDistance( g_nPotDistValue );
+    g_tSonicRight.setMaxDistance( g_nPotValueSide );
 }
 
 
@@ -532,7 +604,7 @@ isLayingdown()
     if ( isHorizontal() )
     {
         ++g_uLaying;
-        return 5 < g_uLaying ? true : false;
+        return 10 < g_uLaying ? true : false;
     }
     else
     {
@@ -575,7 +647,6 @@ orientationVertical()
                 mInterrupts = ADXL_M_INACTIVITY;
             }
         }
-        // g_uCountInterrupt = 0;
 
         if ( 0 != mInterrupts )
         {
@@ -597,7 +668,7 @@ orientationVertical()
             }
             g_uTimeInterrupt = millis();
         }
-        else  //if ( ! g_bSleepy )
+        else
         {
             bool bDirty = false;
             if ( g_tSonicDelay.timesUp( g_uTimeCurrent ) )
@@ -634,7 +705,7 @@ orientationVertical()
                 DEBUG_VPRINT( ";  FL = ", nFL );
                 DEBUG_VPRINT( ";  FR = ", nFR );
                 DEBUG_VPRINT( ";  R = ", nR );
-                DEBUG_VPRINT( "; pS = ", g_nPotDistValue );
+                DEBUG_VPRINT( "; pS = ", g_nPotValueSide );
                 DEBUG_VPRINT( "; pF = ", g_nPotValueFront );
                 DEBUG_VPRINTLN( "; #", g_nSonicCount );
 
@@ -650,61 +721,87 @@ orientationVertical()
 
                 // bDirty = false;
                 bool    bVibeLeft = false;
-                bool    bVibeFrontLeft = false;
-                bool    bVibeFrontRight = false;
                 bool    bVibeRight = false;
-                uint8_t nVibeLeftValue = 0;
-                uint8_t nVibeFrontLeftValue = 0;
-                uint8_t nVibeFrontRightValue = 0;
-                uint8_t nVibeRightValue = 0;
+                uint8_t nVibeValueLeft = 0;
+                uint8_t nVibeValueRight = 0;
 
-                if ( 1 < nL && nL <= g_nPotDistValue )
+                VibeItem* pVibeListLeft = nullptr;
+                VibeItem* pVibeListRight = nullptr;
+
+                int nVibeCountLeft = 0;
+                int nVibeCountRight = 0;
+
+                if ( 1 < nL || 1 < nFL )
                 {
                     bVibeLeft = true;
-                    nVibeLeftValue = map( nL, g_nPotDistValue, 1, 1, 255 );
-                }
-                if ( 1 < nFL && nFL <= g_nPotValueFront )
-                {
-                    bVibeFrontLeft = true;
-                    nVibeFrontLeftValue
-                            = map( nFL, g_nPotValueFront, 1, 1, 255 );
+                    if ( 1 < nFL )
+                        nVibeValueLeft
+                                = map( nFL, g_nPotValueFront, 1, 1, 255 );
+                    else
+                        nVibeValueLeft = map( nL, g_nPotValueSide, 1, 1, 255 );
+
+                    if ( 1 < nFL && 1 < nL )
+                    {
+                        g_tVibeLeft.setPattern( g_nVibeCountBoth, g_aVibeBoth );
+                    }
+                    else if ( 1 < nFL )
+                    {
+                        g_tVibeLeft.setPattern(
+                                g_nVibeCountFront, g_aVibeFront );
+                    }
+                    else
+                    {
+                        g_tVibeLeft.setPattern( g_nVibeCountSide, g_aVibeSide );
+                    }
                 }
 
-                if ( 1 < nFR && nFR <= g_nPotValueFront )
-                {
-                    bVibeFrontRight = true;
-                    nVibeFrontRightValue
-                            = map( nFR, g_nPotValueFront, 1, 1, 255 );
-                }
 
-                if ( 1 < nR && nR <= g_nPotDistValue )
+                if ( 1 < nFR || 1 < nR )
                 {
                     bVibeRight = true;
-                    nVibeRightValue = map( nR, g_nPotDistValue, 1, 1, 255 );
+                    if ( 1 < nFR )
+                        nVibeValueRight
+                                = map( nFR, g_nPotValueFront, 1, 1, 255 );
+                    else
+                        nVibeValueRight = map( nR, g_nPotValueSide, 1, 1, 255 );
+
+                    if ( 1 < nFR && 1 < nR )
+                    {
+                        g_tVibeRight.setPattern(
+                                g_nVibeCountBoth, g_aVibeBoth );
+                    }
+                    else if ( 1 < nFR )
+                    {
+                        g_tVibeRight.setPattern(
+                                g_nVibeCountFront, g_aVibeFront );
+                    }
+                    else
+                    {
+                        g_tVibeRight.setPattern(
+                                g_nVibeCountSide, g_aVibeSide );
+                    }
                 }
-                // DEBUG_VPRINT( "vL=", nVibeLeftValue );
-                // DEBUG_VPRINTLN( "; vR=", nVibeRightValue );
 
 
                 if ( bVibeLeft )
-                    g_tVibeLeft.on( nVibeLeftValue );
+                    g_tVibeLeft.on( nVibeValueLeft );
                 else
                     g_tVibeLeft.off();
 
-                if ( bVibeFrontLeft )
-                    g_tVibeFrontLeft.on( nVibeFrontLeftValue );
-                else
-                    g_tVibeFrontLeft.off();
-
-                if ( bVibeFrontRight )
-                    g_tVibeFrontRight.on( nVibeFrontRightValue );
-                else
-                    g_tVibeFrontRight.off();
 
                 if ( bVibeRight )
-                    g_tVibeRight.on( nVibeRightValue );
+                    g_tVibeRight.on( nVibeValueRight );
                 else
                     g_tVibeRight.off();
+
+                g_tVibeLeft.sync( g_tVibeRight );
+                g_tVibeLeft.cycle( g_uTimeCurrent );
+                g_tVibeRight.cycle( g_uTimeCurrent );
+            }
+            else if ( g_tVibeDelay.timesUp( g_uTimeCurrent ) )
+            {
+                g_tVibeLeft.cycle( g_uTimeCurrent );
+                g_tVibeRight.cycle( g_uTimeCurrent );
             }
         }
     }
@@ -747,8 +844,6 @@ setup()
 
     updatePotValues();
 
-    // adxl = ADXL345();
-
     adxlSetup( k_uAdxlDelaySleep );
     adxlAttachInterrupt();
 
@@ -760,12 +855,8 @@ setup()
     sonicSetup();
 
     g_tVibeLeft.init();
-    g_tVibeFrontLeft.init();
-    g_tVibeFrontRight.init();
     g_tVibeRight.init();
-    //pinMode( kPinPotDist, INPUT );
-    // DEBUG_PRINT( "pot=" );
-    // DEBUG_PRINTLN( g_nPotValue );
+    g_tVibeDelay.init( 250 );
 
     g_bLayingDown = false;
 
@@ -906,41 +997,41 @@ loop()
             // bDirty = false;
             bool    bVibeLeft = false;
             bool    bVibeRight = false;
-            uint8_t nVibeLeftValue = 0;
-            uint8_t nVibeRightValue = 0;
-            if ( 1 < nL && nL < g_nPotDistValue )
+            uint8_t nVibeValueLeft = 0;
+            uint8_t nVibeValueRight = 0;
+            if ( 1 < nL && nL < g_nPotValueSide )
             {
                 bVibeLeft = true;
-                nVibeLeftValue = map( nL, g_nPotDistValue, 1, 1, 255 );
+                nVibeValueLeft = map( nL, g_nPotValueSide, 1, 1, 255 );
             }
             if ( 1 < nFL && nFL < g_nPotValueFront )
             {
                 bVibeLeft = true;
-                nVibeLeftValue = map( nFL, g_nPotValueFront, 1, 1, 255 );
+                nVibeValueLeft = map( nFL, g_nPotValueFront, 1, 1, 255 );
             }
 
-            if ( 1 < nR && nR < g_nPotDistValue )
+            if ( 1 < nR && nR < g_nPotValueSide )
             {
                 bVibeRight = true;
-                nVibeRightValue = map( nR, g_nPotDistValue, 1, 1, 255 );
+                nVibeValueRight = map( nR, g_nPotValueSide, 1, 1, 255 );
             }
             if ( 1 < nFR && nFR < g_nPotValueFront )
             {
                 bVibeRight = true;
-                nVibeRightValue = map( nFR, g_nPotValueFront, 1, 1, 255 );
+                nVibeValueRight = map( nFR, g_nPotValueFront, 1, 1, 255 );
             }
 
-            // DEBUG_VPRINT( "vL=", nVibeLeftValue );
-            // DEBUG_VPRINTLN( "; vR=", nVibeRightValue );
+            // DEBUG_VPRINT( "vL=", nVibeValueLeft );
+            // DEBUG_VPRINTLN( "; vR=", nVibeValueRight );
 
 
             if ( bVibeLeft )
-                g_tVibeLeft.on( nVibeLeftValue );
+                g_tVibeLeft.on( nVibeValueLeft );
             else
                 g_tVibeLeft.off();
 
             if ( bVibeRight )
-                g_tVibeRight.on( nVibeRightValue );
+                g_tVibeRight.on( nVibeValueRight );
             else
                 g_tVibeRight.off();
         }
