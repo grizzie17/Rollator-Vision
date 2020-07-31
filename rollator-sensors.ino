@@ -44,6 +44,9 @@ const uint8_t kPinSDA = A4;
 const uint8_t kPinSCL = A5;
 
 
+const unsigned int k_minDistance = 10;  // cm
+
+
 typedef enum orientation_t
         : uint8_t
 {
@@ -273,15 +276,14 @@ typedef struct VibeItem
 
 // following arrays contain millisecond times for on..off
 VibeItem g_aVibeFront[] = { { 1000, true }, { 1000, false } };
-VibeItem g_aVibeSide[] = { { 250, true }, { 750, false } };
-VibeItem g_aVibeBoth[] = { { 1000, true }, { 500, false }, { 250, true },
-    { 500, false }, { 250, true }, { 500, false } };
+VibeItem g_aVibeSide[] = { { 200, true }, { 800, false } };
+VibeItem g_aVibeBoth[] = { { 1000, true }, { 800, false }, { 200, true },
+    { 800, false }, { 200, true }, { 800, false } };
 
 int g_nVibeCountFront = sizeof( g_aVibeFront ) / sizeof( g_aVibeFront[0] );
 int g_nVibeCountSide = sizeof( g_aVibeSide ) / sizeof( g_aVibeSide[0] );
 int g_nVibeCountBoth = sizeof( g_aVibeBoth ) / sizeof( g_aVibeBoth[0] );
 
-YogiDelay g_tVibeDelay;
 
 class VibeControl
 {
@@ -289,6 +291,7 @@ public:
     VibeControl( uint8_t pin )
             : m_pin( pin )
             , m_val( 0 )
+            , m_buzzing( false )
             , m_tDelay()
     {}
 
@@ -298,6 +301,7 @@ public:
     {
         pinMode( m_pin, OUTPUT );
         m_val = 0;
+        m_buzzing = false;
         m_tDelay.init( 1000 );
     }
 
@@ -336,9 +340,15 @@ public:
             if ( m_tDelay.timesUp( nTimeCurrent ) )
             {
                 if ( m_aVibeList[m_index].bOn )
+                {
+                    m_buzzing = true;
                     analogWrite( m_pin, m_val );
+                }
                 else
+                {
+                    m_buzzing = false;
                     analogWrite( m_pin, 0 );
+                }
                 m_tDelay.newDelay( m_aVibeList[m_index].nDuration );
                 ++m_index;
                 if ( m_nCountVibe <= m_index )
@@ -354,9 +364,16 @@ public:
         {
             m_val = 0;
             m_index = 0;
+            m_buzzing = false;
             m_aVibeList = nullptr;
             analogWrite( m_pin, m_val );
         }
+    }
+
+    bool
+    isBuzzing()
+    {
+        return m_buzzing;
     }
 
     void
@@ -377,6 +394,7 @@ public:
 protected:
     uint8_t   m_pin;
     uint8_t   m_val;
+    bool      m_buzzing = false;
     YogiDelay m_tDelay;
     int       m_nCountVibe = 0;
     VibeItem* m_aVibeList = nullptr;
@@ -482,7 +500,10 @@ public:
     long
     getDistanceCm()
     {
-        return m_rSonic.getDistanceCm();
+        long dist = m_rSonic.getDistanceCm();
+        if ( 0 < dist && dist < k_minDistance )
+            dist = 0;
+        return dist;
     }
 
 
@@ -603,12 +624,21 @@ orientationVertical()
         g_uTimeCurrent = millis();
         if ( 0 < g_uCountInterrupt )
         {
-            mInterrupts = adxlGetInterrupts();
-            g_uTimeInterrupt = millis();
+            if ( ! g_tVibeLeft.isBuzzing() && ! g_tVibeRight.isBuzzing() )
+            {
+                mInterrupts = adxlGetInterrupts();
+                g_uTimeInterrupt = millis();
+            }
+            else
+            {
+                DEBUG_PRINTLN( "Ignoring Interrupt" );
+                adxl.getInterruptSource();
+                mInterrupts = 0;
+            }
         }
         else
         {
-            if ( k_uDelaySleep < abs( g_uTimeCurrent - g_uTimeInterrupt ) )
+            if ( k_uDelaySleep < g_uTimeCurrent - g_uTimeInterrupt )
             {
                 adxl.getInterruptSource();
                 g_uTimeInterrupt = g_uTimeCurrent;
@@ -668,7 +698,7 @@ orientationVertical()
                 long nFR = g_tAvgFrontRight.getDistance();
                 long nR = g_tAvgRight.getDistance();
 
-                ++g_nSonicCount;
+                DEBUG_STATEMENT( ++g_nSonicCount );
                 DEBUG_VPRINT( "L = ", nL );
                 DEBUG_VPRINT( ";  FL = ", nFL );
                 DEBUG_VPRINT( ";  FR = ", nFR );
@@ -687,26 +717,20 @@ orientationVertical()
                     nR = 0;
                 }
 
-                // bDirty = false;
                 bool    bVibeLeft = false;
                 bool    bVibeRight = false;
                 uint8_t nVibeValueLeft = 0;
                 uint8_t nVibeValueRight = 0;
 
-                VibeItem* pVibeListLeft = nullptr;
-                VibeItem* pVibeListRight = nullptr;
-
-                int nVibeCountLeft = 0;
-                int nVibeCountRight = 0;
-
                 if ( 1 < nL || 1 < nFL )
                 {
                     bVibeLeft = true;
                     if ( 1 < nFL )
-                        nVibeValueLeft
-                                = map( nFL, g_nPotValueFront, 1, 1, 255 );
+                        nVibeValueLeft = map(
+                                nFL, g_nPotValueFront, k_minDistance, 1, 255 );
                     else
-                        nVibeValueLeft = map( nL, g_nPotValueSide, 1, 1, 255 );
+                        nVibeValueLeft = map(
+                                nL, g_nPotValueSide, k_minDistance, 1, 255 );
 
                     if ( 1 < nFL && 1 < nL )
                     {
@@ -728,10 +752,11 @@ orientationVertical()
                 {
                     bVibeRight = true;
                     if ( 1 < nFR )
-                        nVibeValueRight
-                                = map( nFR, g_nPotValueFront, 1, 1, 255 );
+                        nVibeValueRight = map(
+                                nFR, g_nPotValueFront, k_minDistance, 1, 255 );
                     else
-                        nVibeValueRight = map( nR, g_nPotValueSide, 1, 1, 255 );
+                        nVibeValueRight = map(
+                                nR, g_nPotValueSide, k_minDistance, 1, 255 );
 
                     if ( 1 < nFR && 1 < nR )
                     {
@@ -762,11 +787,12 @@ orientationVertical()
                 else
                     g_tVibeRight.off();
 
+
                 g_tVibeLeft.sync( g_tVibeRight );
                 g_tVibeLeft.cycle( g_uTimeCurrent );
                 g_tVibeRight.cycle( g_uTimeCurrent );
             }
-            else if ( g_tVibeDelay.timesUp( g_uTimeCurrent ) )
+            else
             {
                 g_tVibeLeft.cycle( g_uTimeCurrent );
                 g_tVibeRight.cycle( g_uTimeCurrent );
@@ -819,7 +845,6 @@ setup()
 
     g_tVibeLeft.init();
     g_tVibeRight.init();
-    g_tVibeDelay.init( 250 );
 
 
     g_bWatchDogInterrupt = false;
