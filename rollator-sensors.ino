@@ -18,6 +18,8 @@
 #    endif
 #endif
 
+//#define ANTIVIBE
+
 
 const uint8_t k_pinINT = 2;  // INT0
 const uint8_t k_pinRelay = 3;
@@ -585,8 +587,6 @@ isHorizontal()
 }
 
 
-bool g_bLayingDown = false;
-
 bool
 isLayingdown()
 {
@@ -624,6 +624,10 @@ orientationVertical()
         g_uTimeCurrent = millis();
         if ( 0 < g_uCountInterrupt )
         {
+#if ! defined( ANTIVIBE )
+            mInterrupts = adxlGetInterrupts();
+            g_uTimeInterrupt = millis();
+#else
             if ( ! g_tVibeLeft.isBuzzing() && ! g_tVibeRight.isBuzzing() )
             {
                 mInterrupts = adxlGetInterrupts();
@@ -635,6 +639,7 @@ orientationVertical()
                 adxl.getInterruptSource();
                 mInterrupts = 0;
             }
+#endif
         }
         else
         {
@@ -851,7 +856,6 @@ setup()
     WatchDog::init( watchdogIntHandler, OVF_4000MS );
     WatchDog::stop();
 
-    g_bLayingDown = false;
     g_uLaying = 0;
     g_eOrientation = isHorizontal() ? OR_HORIZONTAL : OR_VERTICAL;
 
