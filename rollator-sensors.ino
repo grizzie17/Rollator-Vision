@@ -4,7 +4,6 @@
 
 #include <ADXL345_setup.h>  // includes SparkFun ADXL345 Library
 #include <WatchDog.h>
-// #include <Wire.h>
 
 #include <YogiDelay.h>
 #include <YogiPitches.h>
@@ -18,6 +17,9 @@
 #    endif
 #endif
 
+// uncomment following line to build in the logic that
+// attempts to cancel out the affect of the vibrators
+// on the motion sensor.
 //#define ANTIVIBE
 
 
