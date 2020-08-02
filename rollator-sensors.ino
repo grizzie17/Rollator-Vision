@@ -48,6 +48,7 @@ const uint8_t kPinSDA = A4;
 const uint8_t kPinSCL = A5;
 
 
+// distance below which we ignore
 const unsigned int k_minDistance = 10;  // cm
 
 
@@ -61,14 +62,13 @@ typedef enum orientation_t
 
 orientation_t g_eOrientation = OR_UNKNOWN;
 
-bool          g_bSleepy = false;
-bool          g_bActiveLaydown = false;
-unsigned long g_uLaying = 0;
+bool g_bActiveLaydown = false;
 
 
 unsigned long g_uTimeCurrent = 0;
 unsigned long g_uTimePrevious = 0;
 unsigned long g_uTimeInterrupt = 0;
+unsigned long g_uTimeLaying = 0;
 
 const uint8_t       k_uAdxlDelaySleep = 45;
 const unsigned long k_uDelaySleep = 600 * k_uAdxlDelaySleep;
@@ -213,7 +213,6 @@ watchdogHandler()
         // cancel watchdog
         watchdogWakeup();
 
-        g_uLaying = 0;
         g_bActiveLaydown = false;
         g_eOrientation = OR_VERTICAL;
     }
@@ -279,14 +278,15 @@ typedef struct VibeItem
 } VibeItem;
 
 // following arrays contain millisecond times for on..off
-VibeItem g_aVibeFront[] = { { 1000, true }, { 1000, false } };
-VibeItem g_aVibeSide[] = { { 200, true }, { 800, false } };
-VibeItem g_aVibeBoth[] = { { 1000, true }, { 800, false }, { 200, true },
-    { 800, false }, { 200, true }, { 800, false } };
+const VibeItem g_aVibeFront[] = { { 1000, true }, { 1000, false } };
+const VibeItem g_aVibeSide[] = { { 200, true }, { 500, false } };
+const VibeItem g_aVibeBoth[] = { { 1000, true }, { 500, false }, { 200, true },
+    { 500, false }, { 200, true }, { 500, false } };
 
-int g_nVibeCountFront = sizeof( g_aVibeFront ) / sizeof( g_aVibeFront[0] );
-int g_nVibeCountSide = sizeof( g_aVibeSide ) / sizeof( g_aVibeSide[0] );
-int g_nVibeCountBoth = sizeof( g_aVibeBoth ) / sizeof( g_aVibeBoth[0] );
+const int g_nVibeCountFront
+        = sizeof( g_aVibeFront ) / sizeof( g_aVibeFront[0] );
+const int g_nVibeCountSide = sizeof( g_aVibeSide ) / sizeof( g_aVibeSide[0] );
+const int g_nVibeCountBoth = sizeof( g_aVibeBoth ) / sizeof( g_aVibeBoth[0] );
 
 
 class VibeControl
@@ -317,7 +317,7 @@ public:
     }
 
     void
-    setPattern( int nVibeCount, VibeItem* pVibeList )
+    setPattern( int nVibeCount, const VibeItem* pVibeList )
     {
         if ( pVibeList != m_aVibeList )
         {
@@ -396,13 +396,13 @@ public:
     }
 
 protected:
-    uint8_t   m_pin;
-    uint8_t   m_val;
-    bool      m_buzzing = false;
-    YogiDelay m_tDelay;
-    int       m_nCountVibe = 0;
-    VibeItem* m_aVibeList = nullptr;
-    int       m_index = 0;
+    uint8_t         m_pin;
+    uint8_t         m_val;
+    bool            m_buzzing = false;
+    YogiDelay       m_tDelay;
+    int             m_nCountVibe = 0;
+    const VibeItem* m_aVibeList = nullptr;
+    int             m_index = 0;
 };
 
 
@@ -425,14 +425,12 @@ enterSleep()
     // don't generate inactivity interrupts during sleep
     adxlDrowsy();
 
-    g_bSleepy = true;
     g_tSleep.prepareSleep();
     adxlAttachInterrupt();
     g_tSleep.sleep();
     g_tSleep.postSleep();
 
     // we wakeup here
-    g_bSleepy = false;
     relayEnable();
     adxlWakeup();
     DEBUG_PRINTLN( "Wake Up" );
@@ -594,12 +592,17 @@ isLayingdown()
 {
     if ( isHorizontal() )
     {
-        ++g_uLaying;
-        return 10 < g_uLaying ? true : false;
+        g_uTimeCurrent = millis();
+        if ( 0 == g_uTimeLaying )
+            g_uTimeLaying = g_uTimeCurrent;
+        if ( 1000 < g_uTimeCurrent - g_uTimeLaying )
+            return true;
+        else
+            return false;
     }
     else
     {
-        g_uLaying = 0;
+        g_uTimeLaying = 0;
         return false;
     }
 }
@@ -858,12 +861,12 @@ setup()
     WatchDog::init( watchdogIntHandler, OVF_4000MS );
     WatchDog::stop();
 
-    g_uLaying = 0;
     g_eOrientation = isHorizontal() ? OR_HORIZONTAL : OR_VERTICAL;
 
     g_uTimeInterrupt = millis();
     g_uTimeCurrent = millis();
     g_uTimePrevious = 0;
+    g_uTimeLaying = 0;
 }
 
 
