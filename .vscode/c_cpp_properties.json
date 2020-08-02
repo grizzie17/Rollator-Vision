@@ -9,7 +9,8 @@
             "name": "Win32",
             "defines": [
                 "ARDUINO=10800",
-                "USBCON"
+                "USBCON",
+                "_DEBUG"
             ],
             "includePath": [
                 ".",
