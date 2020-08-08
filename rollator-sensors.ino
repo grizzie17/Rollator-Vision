@@ -219,56 +219,6 @@ watchdogHandler()
 }
 
 
-//============== LED ===============
-
-#if false
-class LedControl
-{
-public:
-    LedControl( uint8_t pin )
-            : m_pin( pin )
-            , m_val( 0 )
-            , m_on( false )
-    {}
-
-    void
-    init()
-    {
-        pinMode( m_pin, OUTPUT );
-        m_val = 0;
-    }
-
-    void
-    on( uint8_t value = HIGH )
-    {
-        if ( m_val != value )
-        {
-            m_val = value;
-            analogWrite( m_pin, m_val );
-            m_on = true;
-        }
-    }
-
-    void
-    off()
-    {
-        if ( 0 < m_val )
-        {
-            m_val = 0;
-            analogWrite( m_pin, m_val );
-            m_on = false;
-        }
-    }
-
-protected:
-    bool    m_on;
-    uint8_t m_val;
-    uint8_t m_pin;
-};
-
-#endif  // false
-
-
 //=========== VIBE ===========
 
 typedef struct VibeItem
