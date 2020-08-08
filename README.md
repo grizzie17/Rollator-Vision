@@ -16,10 +16,10 @@ Medline Empower Rollator Walker
   * Vibrate handles
   * three different vibration patterns:
     * front, side, both
-* Battery powered without the need for switches
+* Battery powered without the need for on/off switches
   * Battery must last for at least one week but preferred two weeks
 
-This first unit will be mounted on the front horizontal bar just below the storage bag.
+This first unit will be mounted on the front horizontal bar in front of the storage bag.
 
 | description       | dimension |
 | ----------------- | --------- |
@@ -32,13 +32,13 @@ This first unit will be mounted on the front horizontal bar just below the stora
 
 ![Circuit](images/rollator-circuit.png)
 
-The core of the system is an `Arduino nano` microprocessor (the diagram show an UNO).  No devices (sensors) are powered directly from the microprocessor.
+The core of the system is an `Arduino nano` microprocessor (the diagram shows an UNO).  No devices (sensors) are powered directly from the microprocessor.
 
-One of the main requirements is that there be no user selectable power switch.  To accomplish this we must powerdown or force devices to enter a sleep-mode.  We use an accelerometer to recognize motion (or lack thereof) and wake up the microprocessor or put it to sleep as needed.  The microprocessor and the accelerometer are the only items that have continuous power, all other devices are powered via a 5V relay.  When the microprocessor sleeps the relay disconnects the power.
+One of the main requirements is that there be no user selectable power switch.  To accomplish this we must powerdown or force devices to enter a sleep-mode.  We use an accelerometer to recognize motion (or lack thereof) and wake up or put the microprocessor to sleep as needed.  The microprocessor and the accelerometer are the only items that have continuous power (but both can be put to sleep), all other devices are powered via a 5V relay.  When the microprocessor sleeps the relay disconnects the power.
 
-The micro processor polls four ultrasonic sensors at an effective rate of 16hz (that is 4hz for each sensor multiplied by the number of sensors).  The four ultrasonic sensors are arraged so that there are two forward facing sensors (slightly angled from straight ahead), and two side facing sensors (left and right).
+The micro processor polls four ultrasonic sensors at an effective rate of 16hz (that is 4hz for each sensor multiplied by the number of sensors).  The four ultrasonic sensors are aranged with two forward facing sensors (slightly angled from straight ahead), and two side facing sensors (left and right).
 
-To provide user feedback, there are two vibrators that will be placed, one in each handle bar.
+To provide user feedback, there are two vibrators that will be placed, one in each handle bar.  No vibration indicates that no obstacles are near.  Vibration from both handles indicates that an obstacle is ahead of the Rollator.  An individual handle vibrating indicates obstacles on the corresponding side.
 
 ## Parts List ##
 
@@ -64,14 +64,16 @@ To provide user feedback, there are two vibrators that will be placed, one in ea
 
 The `Arduino Nano V3` microprocessor is the heart of our Rollator-sensor project.
 
+Please see the tables in the sections below for connection details to the Arduino.
+
 
 ## Battery Pack ##
 
 ![18650 Batteries](images/18650_3000mAh.jpg)
 
-The `Battery Pack`s will be made from 18650 batteries.  Each pack is configured as 2S4P (2 Series and 4 Parallel).  Each cell is rated at 3000 mAh, providing an overall rating, 7.4V 12000 mAh.
+The `Battery Pack` will be made from 18650 batteries.  Each pack is configured as 2S4P (2 Series and 4 Parallel).  Each cell is rated at 3000 mAh, providing an overall rating, 7.4V 12000 mAh.
 
-The packs will use EC3 connector (frequently used on R/C models), and a 3 wire balance connector. This will allow the pack to be charged using a standard R/C balance battery charger.
+The packs will use an EC3 connector (frequently used on R/C models), and a 3 wire balance connector. This will allow the pack to be charged using a standard R/C balance battery charger.
 
 
 
@@ -157,6 +159,21 @@ ADXL345 to an Arduino Nano
 ![Wiring Diagram](images/adxl345.png)  
 Connection Diagram
 
+> The `VCC` and `GND` are not actually directly hooked to the Arduino.  They are connected to the previously mentioned [voltage regulator](#voltage-regulator).
+
+
+## Relay ##
+
+![Songle Relay](images/relay.jpg)
+
+The relay is used to powerdown most of the sensors and other devices while the micro-controller is sleeping.
+
+![Relay Circuit](images/Arduino-Relay.jpg)
+
+1k resistor between NPN transistor `base` pin and signal pin on the micro-controller.
+
+1N4007 diode to protect the micro-controller from voltage spikes.
+
 
 ## HC-SR04 Ultrasonic Sensor ##
 
@@ -174,18 +191,7 @@ Using the `YogiSonic` library allows us to connect the `trigger` and `echo` pins
 
 ![Wiring Diagram](images/HC-SR04.png)
 
-
-## Relay ##
-
-![Songle Relay](images/relay.jpg)
-
-The relay is used to powerdown most of the sensors and other devices while the micro-controller is sleeping.
-
-![Relay Circuit](images/Arduino-Relay.jpg)
-
-1k resistor between NPN transistor `base` pin and signal pin on the micro-controller.
-
-1N4007 diode to protect the micro-controller from voltage spikes.
+> The previous wiring diagram is not really correct. The ground and 5V are actually provided via the previously mentioned [relay](#relay).
 
 
 # Power #
