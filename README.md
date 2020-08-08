@@ -55,15 +55,19 @@ To provide user feedback, there are two vibrators that will be placed, one in ea
 | 1N4007         | Diode                    | 1   |
 | S9V11MACMA     | Pololu 2.5-16V Regulator | 1   |
 | X0023QDG3D     | Vibrator                 | 2   |
-| 7.4V 12,000mAh | 18650 Battery Pack       | 2+  |
+| 7.4V 12,000mAh | 18650 (8) Battery Pack   | 2+  |
 
 
 ## Arduino nano ##
 
 ![Arduino Nano V3](images/arduino-nano-rev3.png)
 
+The `Arduino Nano V3` microprocessor is the heart of our Rollator-sensor project.
+
 
 ## Battery Pack ##
+
+![18650 Batteries](images/18650_3000mAh.jpg)
 
 The `Battery Pack`s will be made from 18650 batteries.  Each pack is configured as 2S4P (2 Series and 4 Parallel).  Each cell is rated at 3000 mAh, providing an overall rating, 7.4V 12000 mAh.
 
@@ -121,8 +125,8 @@ EN = 0.87
 
 Li-Ion VIN cutoff should be 5.6V and the fully charged battery pack should be 8.4V.
 
-EN = 8.4V * 0.7V / 5.6V  
-EN = 1.05
+EN = 8.3V * 0.7V / 5.6V  
+EN = 1.038
 
 
 ## ADXL345 Accelerometer ##
@@ -184,7 +188,7 @@ The relay is used to powerdown most of the sensors and other devices while the m
 1N4007 diode to protect the micro-controller from voltage spikes.
 
 
-## Power ##
+# Power #
 
 |    mA | Notes                      |
 | ----: | -------------------------- |
@@ -200,23 +204,37 @@ The relay is used to powerdown most of the sensors and other devices while the m
 Question: Why is the "Pololu to Main" more than the "Battery to Pololu"?
 
 
-## Timed Test ##
+## Timed Test w/ LiPo Pack ##
 
-|  Day | mA   |
-| ---: | ---- |
-|    0 | 8.39 |
-|    1 | 8.32 |
-|    2 | 8.30 |
-|    3 | 8.25 |
-|    4 | 8.21 |
-|    5 | 8.19 |
-|    6 | 8.17 |
-|    7 | 8.14 |
-|    8 | 8.09 |
-|    9 | 8.04 |
-|   10 | 8.00 |
-|   11 | 7.98 |
-|   12 | 7.97 |
+LiPo battery 2S 7.4mAh (nominal) 5200 mAh 35C
+
+| mA   |  Day | Date |
+| ---- | ---: | ---- |
+| 8.39 |    0 | 7/28 |
+| 8.32 |    1 | 7/28 |
+| 8.30 |    2 | 7/29 |
+| 8.25 |    3 | 7/30 |
+| 8.21 |    4 | 7/31 |
+| 8.19 |    5 | 8/1  |
+| 8.17 |    6 | 8/2  |
+| 8.14 |    7 | 8/3  |
+| 8.09 |    8 | 8/4  |
+| 8.04 |    9 | 8/5  |
+| 8.00 |   10 | 8/6  |
+| 7.98 |   11 | 8/7  |
+| 7.97 |   12 | 8/8  |
+
+At the finishing voltage and the discharge rate we would most likely get three to four weeks of usage on a single charge.
+
+## Timed Test w/ 18650 Battery Pack ##
+
+Li-Ion battery pack 2S4P 7.4 (Nominal) 12000 mAh
+
+| mA   |  Day | Date |
+| ---- | ---: | ---- |
+| 8.30 |    1 | 8/8  |
+
+Our goal with the Li-Ion pack is to get around four to six weeks of usage on a single charge.
 
 
 
@@ -225,4 +243,4 @@ Question: Why is the "Pololu to Main" more than the "Battery to Pololu"?
 | Type      | Nominal | Max  | Min |
 | --------- | ------- | ---- | --- |
 | 2S LiPo   | 7.4     | 8.40 | 7.0 |
-| 2S Li-Ion | 7.4     | 8.40 | 5.6 |
+| 2S Li-Ion | 7.4     | 8.30 | 5.6 |
