@@ -238,7 +238,8 @@ Li-Ion battery pack 2S4P 7.4 (Nominal) 12000 mAh
 
 | mA   |  Day | Date |
 | ---- | ---: | ---- |
-| 8.30 |    1 | 8/8  |
+| 8.30 |    0 | 8/8  |
+| 8.28 |    1 | 8/8  |
 
 Our goal with the Li-Ion pack is to get around four to six weeks of usage on a single charge.
 
