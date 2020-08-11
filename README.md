@@ -164,15 +164,24 @@ Connection Diagram
 
 ## Relay ##
 
-![Songle Relay](images/relay.jpg)
+![Relay](images/HFD2-005-M-L2-D.jpg)
 
-The relay is used to powerdown most of the sensors and other devices while the micro-controller is sleeping.
+The relay is used to power-up the ultrasonic sensors and other devices (with the exception of the ADXL345) for when they are needed. Otherwise they are powered-down.
 
-![Relay Circuit](images/Arduino-Relay.jpg)
+![Relay-Pins](images/Relay-pins.png)
 
-1k resistor between NPN transistor `base` pin and signal pin on the micro-controller.
+> Please note that the pins identified above are not sequential.  They are using position on a breadboard (e.g., pins 3,5,7,10,12,14) are non-existant. In our case, we will not be using pins 6, 9-12.
 
-1N4007 diode to protect the micro-controller from voltage spikes.
+The relay being used has been changed to the HFD2/005-M-L2-D which is a double poll double throw relay.  The important part of this relay is that it does not require power to maintain set/reset condition.  There are two pins that control the unit; one for `set` (on) and the other for `reset` (off).  Setting the appropriate pin to +5V for 5 milliseconds will change the relay setting.
+
+| Relay | Arduino | Circuit         |
+| ----- | ------- | --------------- |
+| 1     | D3      |                 |
+| 2     | D4      |                 |
+| 4     |         | VCC (from Reg.) |
+| 8     |         | OUT +5V         |
+| 16,15 | GND     | GND             |
+
 
 
 ## HC-SR04 Ultrasonic Sensor ##
@@ -182,7 +191,7 @@ one facing left, one facing right.
 
 | HC-SR04 | Arduino    | Notes          |
 | ------- | ---------- | -------------- |
-| Vcc     | 5v         |                |
+| VCC     | 5V         |                |
 | Trigger | D5,7,10,12 | Echo connected |
 | Echo    | Trigger    |                |
 | GND     | GND        |                |
@@ -230,7 +239,7 @@ LiPo battery 2S 7.4mAh (nominal) 5200 mAh 35C
 | 7.98 |   11 | 8/7  |
 | 7.97 |   12 | 8/8  |
 
-At the finishing voltage and the discharge rate we would most likely get three to four weeks of usage on a single charge.
+At the finishing voltage and the discharge rate we would most likely get three weeks of usage on a single charge.
 
 ## Timed Test w/ 18650 Battery Pack ##
 
@@ -240,8 +249,11 @@ Li-Ion battery pack 2S4P 7.4 (Nominal) 12000 mAh
 | ---- | ---: | ---- |
 | 8.30 |    0 | 8/8  |
 | 8.28 |    1 | 8/8  |
+| 8.25 |    2 | 8/9  |
+| 8.24 |    3 | 8/10 |
+| 8.23 |    4 | 8/11 |
 
-Our goal with the Li-Ion pack is to get around four to six weeks of usage on a single charge.
+Our goal with the Li-Ion pack is to get around four weeks of usage on a single charge.
 
 
 
