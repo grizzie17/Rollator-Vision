@@ -40,6 +40,8 @@ The micro processor polls four ultrasonic sensors at an effective rate of 16hz (
 
 To provide user feedback, there are two vibrators that will be placed, one in each handle bar.  No vibration indicates that no obstacles are near.  Vibration from both handles indicates that an obstacle is ahead of the Rollator.  An individual handle vibrating indicates obstacles on the corresponding side.
 
+![Printed Circuit Board](images/PCB.png)
+
 ## Parts List ##
 
 | ID             | Name                     | Qty |
