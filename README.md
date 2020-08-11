@@ -1,6 +1,6 @@
 # Rollator-Sensors #
 
-Sonic sensors for a Rollator (Walker).  The goal is to provide assistance for visually impared individuals that must use a walker and thus can not use a blind cane.
+Ultrasonic sensors for a Rollator (Walker).  The goal is to provide assistance for visually impared individuals that must use a walker and thus can not use a blind cane.
 
 The first test unit will be married to a `Medline Empower Rollator Walker`.
 
@@ -205,7 +205,20 @@ Using the `YogiSonic` library allows us to connect the `trigger` and `echo` pins
 > The previous wiring diagram is not really correct. The ground and 5V are actually provided via the previously mentioned [relay](#relay).
 
 
+## Vibrator ##
+
+![Vibrator](images/vibrator.png)
+
+* Size: 7 x 25 mm
+* Voltage: 1.5-3V
+
+Used in Rollator/Walker hand-grips to notify user of obstacles.
+
+
 # Power #
+
+This section contains measured information for the power usage and batteries.
+
 
 |    mA | Notes                      |
 | ----: | -------------------------- |
@@ -221,7 +234,7 @@ Using the `YogiSonic` library allows us to connect the `trigger` and `echo` pins
 Question: Why is the "Pololu to Main" more than the "Battery to Pololu"?
 
 
-## Timed Test w/ LiPo Pack ##
+## Endurance Test w/ LiPo Pack ##
 
 LiPo battery 2S 7.4mAh (nominal) 5200 mAh 35C
 
@@ -243,7 +256,7 @@ LiPo battery 2S 7.4mAh (nominal) 5200 mAh 35C
 
 At the finishing voltage and the discharge rate we would most likely get three weeks of usage on a single charge.
 
-## Timed Test w/ 18650 Battery Pack ##
+## Endurance Test w/ 18650 Battery Pack ##
 
 Li-Ion battery pack 2S4P 7.4 (Nominal) 12000 mAh
 
@@ -253,7 +266,7 @@ Li-Ion battery pack 2S4P 7.4 (Nominal) 12000 mAh
 | 8.28 |    1 | 8/8  |
 | 8.25 |    2 | 8/9  |
 | 8.24 |    3 | 8/10 |
-| 8.23 |    4 | 8/11 |
+| 8.22 |    4 | 8/11 |
 
 Our goal with the Li-Ion pack is to get around four weeks of usage on a single charge.
 
