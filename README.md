@@ -36,7 +36,7 @@ The core of the system is an `Arduino nano` microprocessor (the diagram shows an
 
 One of the main requirements is that there be no user selectable power switch.  To accomplish this we must powerdown or force devices to enter a sleep-mode.  We use an accelerometer to recognize motion (or lack thereof) and wake up or put the microprocessor to sleep as needed.  The microprocessor and the accelerometer are the only items that have continuous power (but both can be put to sleep), all other devices are powered via a 5V relay.  When the microprocessor sleeps the relay disconnects the power.
 
-The micro processor polls four ultrasonic sensors at an effective rate of 16hz (that is 4hz for each sensor multiplied by the number of sensors).  The four ultrasonic sensors are aranged with two forward facing sensors (slightly angled from straight ahead), and two side facing sensors (left and right).
+The microprocessor polls three ultrasonic sensors at an effective rate of 12hz (that is 4hz for each sensor multiplied by the number of sensors).  The three ultrasonic sensors are aranged with one forward facing sensor, and two side facing sensors (left and right).
 
 To provide user feedback, there are two vibrators that will be placed, one in each handle bar.  No vibration indicates that no obstacles are near.  Vibration from both handles indicates that an obstacle is ahead of the Rollator.  An individual handle vibrating indicates obstacles on the corresponding side.
 
@@ -44,20 +44,20 @@ To provide user feedback, there are two vibrators that will be placed, one in ea
 
 ## Parts List ##
 
-| ID             | Name                     | Qty |
-| -------------- | ------------------------ | --- |
-| Nano           | Arduino nano             | 1   |
-| HC-SR04        | Ultrasonic sensor        | 4   |
-| ADXL345        | Accelerometer            | 1   |
-| 100K           | Resistor                 | 2   |
-| 10K            | Resistor                 | 2   |
-| 1K             | Resistor                 | 1   |
-| 2N2222         | Transistor               | 3   |
-| SRD-05VDC-SL-C | Relay                    | 1   |
-| 1N4007         | Diode                    | 1   |
-| S9V11MACMA     | Pololu 2.5-16V Regulator | 1   |
-| X0023QDG3D     | Vibrator                 | 2   |
-| 7.4V 12,000mAh | 18650 (8) Battery Pack   | 2+  |
+| ID              | Name                     | Qty |
+| --------------- | ------------------------ | --- |
+| Nano            | Arduino nano             | 1   |
+| HC-SR04         | Ultrasonic sensor        | 3   |
+| ADXL345         | Accelerometer            | 1   |
+| 100K            | Resistor                 | 2   |
+| 10K             | Resistor                 | 2   |
+| 1K              | Resistor                 | 1   |
+| 2N2222          | Transistor               | 3   |
+| HFD2-005-M-L2-D | Relay                    | 1   |
+| 1N4007          | Diode                    | -   |
+| S9V11MACMA      | Pololu 2.5-16V Regulator | 1   |
+| X0023QDG3D      | Vibrator                 | 2   |
+| 7.4V 12,000mAh  | 18650 (8) Battery Pack   | 2+  |
 
 
 ## Arduino nano ##
