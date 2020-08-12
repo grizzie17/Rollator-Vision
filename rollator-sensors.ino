@@ -24,23 +24,27 @@
 
 
 const uint8_t k_pinINT = 2;  // INT0
-const uint8_t k_pinRelay = 3;
+const uint8_t k_pinRelayOn = 3;
+const uint8_t k_pinRelayOff = 4;
 
 
-const uint8_t kPinVibeRight = 11;  // PWM
-const uint8_t kPinVibeLeft = 6;    // PWM
+const uint8_t kPinSonicEchoRight = 9;
+const uint8_t kPinSonicTrigRight = 9;
 
-const uint8_t kPinSonicEchoRight = 12;
-const uint8_t kPinSonicTrigRight = 12;
+// const uint8_t kPinSonicEchoFrontRight = 10;
+// const uint8_t kPinSonicTrigFrontRight = 10;
 
-const uint8_t kPinSonicEchoFrontRight = 10;
-const uint8_t kPinSonicTrigFrontRight = 10;
+// const uint8_t kPinSonicEchoFrontLeft = 7;
+// const uint8_t kPinSonicTrigFrontLeft = 7;
 
-const uint8_t kPinSonicEchoFrontLeft = 7;
-const uint8_t kPinSonicTrigFrontLeft = 7;
+const uint8_t kPinSonicEchoFront = 8;
+const uint8_t kPinSonicTrigFront = 8;
 
-const uint8_t kPinSonicEchoLeft = 5;
-const uint8_t kPinSonicTrigLeft = 5;
+const uint8_t kPinSonicEchoLeft = 7;
+const uint8_t kPinSonicTrigLeft = 7;
+
+const uint8_t kPinVibeRight = 6;  // PWM
+const uint8_t kPinVibeLeft = 5;   // PWM
 
 
 const uint8_t kPinPotDist = A0;
@@ -84,27 +88,118 @@ YogiSleep g_tSleep;
 
 //============== RELAY ===============
 
+
+// This class is for relays that use two pins.
+// Each pin switches the output to one of two
+// outputs.
+class RelayControl
+{
+public:
+    // class lifecycle ----------------
+
+    RelayControl()
+            : m_bSet( false )
+            , m_pinSet( 0 )
+            , m_pinReset( 0 )
+    {}
+    RelayControl( uint8_t on, uint8_t off )
+            : m_bSet( false )
+            , m_pinSet( on )
+            , m_pinReset( off )
+    {}
+
+
+public:
+    // public functions ---------------
+
+    void
+    init( uint8_t set = 0, uint8_t reset = 0 )
+    {
+        if ( 0 < set )
+            m_pinSet = set;
+        if ( 0 < reset )
+            m_pinReset = reset;
+        if ( 0 < m_pinSet )
+            pinMode( m_pinSet, OUTPUT );
+        if ( 0 < m_pinReset )
+            pinMode( m_pinReset, OUTPUT );
+        this->reset();
+    }
+
+    inline void
+    set()
+    {
+        m_bSet = true;
+        trigger( m_pinSet );
+    }
+
+    inline void
+    reset()
+    {
+        m_bSet = false;
+        trigger( m_pinReset );
+    }
+
+    inline bool
+    isOn()
+    {
+        return isSet();
+    }
+
+    bool
+    isSet()
+    {
+        return m_bSet;
+    }
+
+protected:
+    // protected functions ------------
+
+    void
+    trigger( uint8_t pin )
+    {
+        if ( 0 < pin )
+        {
+            digitalWrite( pin, HIGH );
+            delay( 5 );
+            digitalWrite( pin, LOW );
+        }
+    }
+
+    // protected data -----------------
+
+    bool    m_bSet;
+    uint8_t m_pinSet;
+    uint8_t m_pinReset;
+};
+
+RelayControl g_tRelay( k_pinRelayOn, k_pinRelayOff );
+
+
 inline void
 relaySetup()
 {
-    pinMode( k_pinRelay, OUTPUT );
+    //pinMode( k_pinRelayOn, OUTPUT );
+    g_tRelay.init();
 }
 
 
-void
+inline void
 relayEnable()
 {
-    relaySetup();
-    digitalWrite( k_pinRelay, HIGH );
-    delay( 400 );
+    //relaySetup();
+    g_tRelay.set();
+    //digitalWrite( k_pinRelayOn, HIGH );
+    //delay( 400 );
 }
 
 
-void
+inline void
 relayDisable()
 {
-    relaySetup();
-    digitalWrite( k_pinRelay, LOW );
+    g_tRelay.reset();
+    // relaySetup();
+    // digitalWrite( k_pinRelayOn, LOW );
 }
 
 
@@ -472,14 +567,14 @@ protected:
 
 
 YogiSonic g_tSonicLeft( kPinSonicTrigLeft, kPinSonicEchoLeft );
-YogiSonic g_tSonicFrontLeft( kPinSonicTrigFrontLeft, kPinSonicEchoFrontLeft );
-YogiSonic g_tSonicFrontRight(
-        kPinSonicTrigFrontRight, kPinSonicEchoFrontRight );
+YogiSonic g_tSonicFront( kPinSonicTrigFront, kPinSonicEchoFront );
+// YogiSonic g_tSonicFrontRight(
+//         kPinSonicTrigFrontRight, kPinSonicEchoFrontRight );
 YogiSonic g_tSonicRight( kPinSonicTrigRight, kPinSonicEchoRight );
 
 CAvgSonic g_tAvgLeft( g_tSonicLeft, "Left" );
-CAvgSonic g_tAvgFrontLeft( g_tSonicFrontLeft, "FrontLeft" );
-CAvgSonic g_tAvgFrontRight( g_tSonicFrontRight, "FrontRight" );
+CAvgSonic g_tAvgFront( g_tSonicFront, "Front" );
+// CAvgSonic g_tAvgFrontRight( g_tSonicFrontRight, "FrontRight" );
 CAvgSonic g_tAvgRight( g_tSonicRight, "Right" );
 
 
@@ -491,8 +586,8 @@ void
 sonicSetup()
 {
     g_tSonicLeft.init();
-    g_tSonicFrontLeft.init();
-    g_tSonicFrontRight.init();
+    g_tSonicFront.init();
+    //g_tSonicFrontRight.init();
     g_tSonicRight.init();
 
 #define SONIC_SENSOR_TOTAL 4  // count of ultrasonic sensors
@@ -522,8 +617,8 @@ updatePotValues()
     DEBUG_VPRINTLN( "; Front=", g_nPotValueFront );
 
     g_tSonicLeft.setMaxDistance( g_nPotValueSide );
-    g_tSonicFrontLeft.setMaxDistance( g_nPotValueFront );
-    g_tSonicFrontRight.setMaxDistance( g_nPotValueFront );
+    g_tSonicFront.setMaxDistance( g_nPotValueFront );
+    //g_tSonicFrontRight.setMaxDistance( g_nPotValueFront );
     g_tSonicRight.setMaxDistance( g_nPotValueSide );
 }
 
@@ -618,8 +713,8 @@ orientationVertical()
                 g_nActivity = 0;
                 updatePotValues();
                 g_tAvgLeft.reset();
-                g_tAvgFrontLeft.reset();
-                g_tAvgFrontRight.reset();
+                g_tAvgFront.reset();
+                //g_tAvgFrontRight.reset();
                 g_tAvgRight.reset();
                 g_nSonicCycle = 0;
                 g_nSonicCount = 0;
@@ -640,11 +735,11 @@ orientationVertical()
                     bDirty = g_tAvgRight.isDirty();
                     break;
                 case 2:
-                    bDirty = g_tAvgFrontLeft.isDirty();
+                    bDirty = g_tAvgFront.isDirty();
                     break;
-                case 3:
-                    bDirty = g_tAvgFrontRight.isDirty();
-                    break;
+                // case 3:
+                //     bDirty = g_tAvgFrontRight.isDirty();
+                //     break;
                 default:
                     g_nSonicCycle = 0;
                     break;
@@ -654,14 +749,14 @@ orientationVertical()
             if ( bDirty )
             {
                 long nL = g_tAvgLeft.getDistance();
-                long nFL = g_tAvgFrontLeft.getDistance();
-                long nFR = g_tAvgFrontRight.getDistance();
+                long nF = g_tAvgFront.getDistance();
+                //long nFR = g_tAvgFrontRight.getDistance();
                 long nR = g_tAvgRight.getDistance();
 
                 DEBUG_STATEMENT( ++g_nSonicCount );
                 DEBUG_VPRINT( "L = ", nL );
-                DEBUG_VPRINT( ";  FL = ", nFL );
-                DEBUG_VPRINT( ";  FR = ", nFR );
+                DEBUG_VPRINT( ";  F = ", nF );
+                //DEBUG_VPRINT( ";  FR = ", nFR );
                 DEBUG_VPRINT( ";  R = ", nR );
                 DEBUG_VPRINT( "; pS = ", g_nPotValueSide );
                 DEBUG_VPRINT( "; pF = ", g_nPotValueFront );
@@ -672,67 +767,70 @@ orientationVertical()
                 if ( 0 < nL && 0 < nR )
                 {
                     nL = 0;
-                    nFL = 0;
-                    nFR = 0;
+                    nF = 0;
+                    //nFR = 0;
                     nR = 0;
                 }
 
                 bool    bVibeLeft = false;
                 bool    bVibeRight = false;
                 uint8_t nVibeValueLeft = 0;
+                uint8_t nVibeValueFront = 0;
                 uint8_t nVibeValueRight = 0;
 
-                if ( 1 < nL || 1 < nFL )
+                if ( 1 < nL )
                 {
-                    bVibeLeft = true;
-                    if ( 1 < nFL )
-                        nVibeValueLeft = map(
-                                nFL, g_nPotValueFront, k_minDistance, 1, 255 );
-                    else
-                        nVibeValueLeft = map(
-                                nL, g_nPotValueSide, k_minDistance, 1, 255 );
-
-                    if ( 1 < nFL && 1 < nL )
-                    {
-                        g_tVibeLeft.setPattern( g_nVibeCountBoth, g_aVibeBoth );
-                    }
-                    else if ( 1 < nFL )
-                    {
-                        g_tVibeLeft.setPattern(
-                                g_nVibeCountFront, g_aVibeFront );
-                    }
-                    else
-                    {
-                        g_tVibeLeft.setPattern( g_nVibeCountSide, g_aVibeSide );
-                    }
+                    nVibeValueLeft
+                            = map( nL, g_nPotValueSide, k_minDistance, 1, 255 );
                 }
 
-
-                if ( 1 < nFR || 1 < nR )
+                if ( 1 < nF )
                 {
-                    bVibeRight = true;
-                    if ( 1 < nFR )
-                        nVibeValueRight = map(
-                                nFR, g_nPotValueFront, k_minDistance, 1, 255 );
-                    else
-                        nVibeValueRight = map(
-                                nR, g_nPotValueSide, k_minDistance, 1, 255 );
+                    nVibeValueFront = map(
+                            nF, g_nPotValueFront, k_minDistance, 1, 255 );
+                }
 
-                    if ( 1 < nFR && 1 < nR )
+                if ( 1 < nR )
+                {
+                    nVibeValueRight
+                            = map( nR, g_nPotValueSide, k_minDistance, 1, 255 );
+                }
+
+                if ( 1 < nF )
+                {
+                    bVibeLeft = true;
+                    bVibeRight = true;
+                    if ( 1 < nL )
                     {
+                        nVibeValueLeft = max( nVibeValueLeft, nVibeValueFront );
+                        g_tVibeLeft.setPattern( g_nVibeCountBoth, g_aVibeBoth );
+                    }
+                    else if ( 1 < nR )
+                    {
+                        nVibeValueRight
+                                = max( nVibeValueRight, nVibeValueFront );
                         g_tVibeRight.setPattern(
                                 g_nVibeCountBoth, g_aVibeBoth );
                     }
-                    else if ( 1 < nFR )
+                    else
                     {
+                        nVibeValueLeft = nVibeValueFront;
+                        nVibeValueRight = nVibeValueFront;
+                        g_tVibeLeft.setPattern(
+                                g_nVibeCountFront, g_aVibeFront );
                         g_tVibeRight.setPattern(
                                 g_nVibeCountFront, g_aVibeFront );
                     }
-                    else
-                    {
-                        g_tVibeRight.setPattern(
-                                g_nVibeCountSide, g_aVibeSide );
-                    }
+                }
+                else if ( 1 < nL )
+                {
+                    bVibeLeft = true;
+                    g_tVibeLeft.setPattern( g_nVibeCountSide, g_aVibeSide );
+                }
+                else if ( 1 < nR )
+                {
+                    bVibeRight = false;
+                    g_tVibeRight.setPattern( g_nVibeCountSide, g_aVibeSide );
                 }
 
 
@@ -794,6 +892,7 @@ setup()
 {
     DEBUG_OPEN();
 
+    relaySetup();
     relayEnable();  // power up sensors
 
     updatePotValues();
@@ -806,9 +905,8 @@ setup()
     g_tVibeLeft.init();
     g_tVibeRight.init();
 
-
     g_bWatchDogInterrupt = false;
-    WatchDog::init( watchdogIntHandler, OVF_4000MS );
+    WatchDog::init( watchdogIntHandler, OVF_8000MS );
     WatchDog::stop();
 
     g_eOrientation = isHorizontal() ? OR_HORIZONTAL : OR_VERTICAL;
