@@ -8,6 +8,7 @@ The first test unit will be married to a `Medline Empower Rollator Walker`.
 Medline Empower Rollator Walker
 
 
+-----
 
 ## Requirements ##
 
@@ -28,6 +29,8 @@ This first unit will be mounted on the front horizontal bar in front of the stor
 | ~ Cross Bar Angle | 60 deg    |
 
 
+-----
+
 ## Overall Circuit ##
 
 ![Circuit](images/rollator-circuit.png)
@@ -41,6 +44,9 @@ The microprocessor polls three ultrasonic sensors at an effective rate of 12hz (
 To provide user feedback, there are two vibrators that will be placed, one in each handle bar.  No vibration indicates that no obstacles are near.  Vibration from both handles indicates that an obstacle is ahead of the Rollator.  An individual handle vibrating indicates obstacles on the corresponding side.
 
 ![Printed Circuit Board](images/PCB.png)
+
+
+-----
 
 ## Parts List ##
 
@@ -60,6 +66,8 @@ To provide user feedback, there are two vibrators that will be placed, one in ea
 | 7.4V 12,000mAh  | 18650 (8) Battery Pack   | 2+  |
 
 
+-----
+
 ## Arduino nano ##
 
 ![Arduino Nano V3](images/arduino-nano-rev3.png)
@@ -68,6 +76,8 @@ The `Arduino Nano V3` microprocessor is the heart of our Rollator-sensor project
 
 Please see the tables in the sections below for connection details to the Arduino.
 
+
+-----
 
 ## Battery Pack ##
 
@@ -78,6 +88,7 @@ The `Battery Pack` will be made from 18650 batteries.  Each pack is configured a
 The packs will use an EC3 connector (frequently used on R/C models), and a 3 wire balance connector. This will allow the pack to be charged using a standard R/C balance battery charger.
 
 
+-----
 
 ## Voltage Regulator ##
 
@@ -133,6 +144,8 @@ EN = 8.3V * 0.7V / 5.6V
 EN = 1.038
 
 
+-----
+
 ## ADXL345 Accelerometer ##
 
 ![ADXL345 Accelerometer](images/ADXL345-Accelerometer-Module.jpg)
@@ -164,6 +177,8 @@ Connection Diagram
 > The `VCC` and `GND` are not actually directly hooked to the Arduino.  They are connected to the previously mentioned [voltage regulator](#voltage-regulator).
 
 
+-----
+
 ## Relay ##
 
 ![Relay](images/HFD2-005-M-L2-D.jpg)
@@ -185,6 +200,7 @@ The relay being used has been changed to the HFD2/005-M-L2-D which is a double p
 | 16,15 | GND     | GND             |
 
 
+-----
 
 ## HC-SR04 Ultrasonic Sensor ##
 
@@ -205,6 +221,8 @@ Using the `YogiSonic` library allows us to connect the `trigger` and `echo` pins
 > The previous wiring diagram is not really correct. The ground and 5V are actually provided via the previously mentioned [relay](#relay).
 
 
+-----
+
 ## Vibrator ##
 
 ![Vibrator](images/vibrator.png)
@@ -214,6 +232,8 @@ Using the `YogiSonic` library allows us to connect the `trigger` and `echo` pins
 
 Used in Rollator/Walker hand-grips to notify user of obstacles.
 
+
+-----
 
 # Power #
 
@@ -267,6 +287,9 @@ Li-Ion battery pack 2S4P 7.4 (Nominal) 12000 mAh
 | 8.25 |    2 | 8/9  |
 | 8.24 |    3 | 8/10 |
 | 8.22 |    4 | 8/11 |
+| 8.21 |    5 | 8/12 |
+| 8.19 |    6 | 8/13 |
+| 8.19 |    7 | 8/14 |
 
 Our goal with the Li-Ion pack is to get around four weeks of usage on a single charge.
 
