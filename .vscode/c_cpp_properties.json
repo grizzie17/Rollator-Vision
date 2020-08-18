@@ -25,6 +25,7 @@
                 "${env:SKETCHLIBS}\\**\\**",
                 "${env:SKETCHLIBS}\\YogiDelay\\src",
                 "${env:SKETCHLIBS}\\YogiPitches\\src",
+                "${env:SKETCHLIBS}\\YogiRelay\\src",
                 "${env:SKETCHLIBS}\\YogiSonic\\src",
                 "${env:SKETCHLIBS}\\SparkFun_ADXL345_Arduino_Library\\src",
                 "${env:SKETCHLIBS}\\Yogi_ADXL345\\src",

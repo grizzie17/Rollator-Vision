@@ -2,24 +2,24 @@
 #define _DEBUG
 #include <YogiDebug.h>
 
-#include <ADXL345_setup.h>  // includes SparkFun ADXL345 Library
-#include <WatchDog.h>
+// Control the macros below to enable which relay is used.
+//#define RELAY_HFD2
+#define RELAY_SONGLE
+#include <YogiRelay.h>
 
 #include <YogiDelay.h>
 #include <YogiPitches.h>
 #include <YogiSleep.h>
 #include <YogiSonic.h>
 
+#include <ADXL345_setup.h>  // includes SparkFun ADXL345 Library
+#include <WatchDog.h>
 
 #ifndef __asm__
 #    ifdef _MSC_VER
 #        define __asm__ __asm
 #    endif
 #endif
-
-// Control the macros below to enable which relay is used.
-//#define RELAY_HFD2
-#define RELAY_SONGLE
 
 // uncomment following line to build in the logic that
 // attempts to cancel out the affect of the vibrators
@@ -32,23 +32,18 @@ const uint8_t k_pinRelayOn = 3;
 const uint8_t k_pinRelayOff = 4;
 
 
-const uint8_t kPinSonicEchoRight = 9;
-const uint8_t kPinSonicTrigRight = 9;
+const uint8_t kPinVibeLeft = 5;   // PWM
+const uint8_t kPinVibeRight = 6;  // PWM
 
-// const uint8_t kPinSonicEchoFrontRight = 10;
-// const uint8_t kPinSonicTrigFrontRight = 10;
-
-// const uint8_t kPinSonicEchoFrontLeft = 7;
-// const uint8_t kPinSonicTrigFrontLeft = 7;
-
-const uint8_t kPinSonicEchoFront = 8;
-const uint8_t kPinSonicTrigFront = 8;
 
 const uint8_t kPinSonicEchoLeft = 7;
 const uint8_t kPinSonicTrigLeft = 7;
 
-const uint8_t kPinVibeRight = 6;  // PWM
-const uint8_t kPinVibeLeft = 5;   // PWM
+const uint8_t kPinSonicEchoFront = 8;
+const uint8_t kPinSonicTrigFront = 8;
+
+const uint8_t kPinSonicEchoRight = 9;
+const uint8_t kPinSonicTrigRight = 9;
 
 
 const uint8_t kPinPotDist = A0;
@@ -57,7 +52,7 @@ const uint8_t kPinSCL = A5;
 
 
 // distance below which we ignore
-const unsigned int k_minDistance = 4;  // cm
+const unsigned int k_minDistance = 6;  // cm
 
 
 typedef enum orientation_t
@@ -92,133 +87,7 @@ YogiSleep g_tSleep;
 
 //============== RELAY ===============
 
-
-// This class is for relays that use two pins.
-// Each pin switches the output to one of two
-// outputs.
-class RelayControl
-{
-public:
-    // class lifecycle ----------------
-
-    RelayControl()
-            : m_bSet( false )
-            , m_pinSet( 0 )
-#if defined( RELAY_HFD2 )
-            , m_pinReset( 0 )
-#endif
-    {}
-    RelayControl( uint8_t on, uint8_t off )
-            : m_bSet( false )
-            , m_pinSet( on )
-#if defined( RELAY_HFD2 )
-            , m_pinReset( off )
-#endif
-    {}
-
-
-public:
-    // public functions ---------------
-
-    void
-    init( uint8_t set = 0, uint8_t reset = 0 )
-    {
-        if ( 0 < set )
-            m_pinSet = set;
-        if ( 0 < m_pinSet )
-            pinMode( m_pinSet, OUTPUT );
-#if defined( RELAY_HFD2 )
-        if ( 0 < reset )
-            m_pinReset = reset;
-        if ( 0 < m_pinReset )
-            pinMode( m_pinReset, OUTPUT );
-#endif
-        this->reset();
-    }
-
-    inline void
-    set()
-    {
-        m_bSet = true;
-#if defined( RELAY_HFD2 )
-        trigger( m_pinSet );
-#elif defined( RELAY_SONGLE )
-        digitalWrite( m_pinSet, HIGH );
-        delay( 400 );
-#endif
-    }
-
-    inline void
-    reset()
-    {
-        m_bSet = false;
-#if defined( RELAY_HFD2 )
-        trigger( m_pinReset );
-#elif defined( RELAY_SONGLE )
-        digitalWrite( m_pinSet, LOW );
-        delay( 400 );
-#endif
-    }
-
-    inline bool
-    isOn()
-    {
-        return isSet();
-    }
-
-    bool
-    isSet()
-    {
-        return m_bSet;
-    }
-
-protected:
-    // protected functions ------------
-
-    void
-    trigger( uint8_t pin )
-    {
-        if ( 0 < pin )
-        {
-#if defined( RELAY_HFD2 )
-            digitalWrite( pin, HIGH );
-            delay( 5 );
-            digitalWrite( pin, LOW );
-#endif
-        }
-    }
-
-    // protected data -----------------
-
-    bool    m_bSet;
-    uint8_t m_pinSet;
-#if defined( RELAY_HFD2 )
-    uint8_t m_pinReset;
-#endif
-};
-
-RelayControl g_tRelay( k_pinRelayOn, k_pinRelayOff );
-
-
-inline void
-relaySetup()
-{
-    g_tRelay.init();
-}
-
-
-inline void
-relayEnable()
-{
-    g_tRelay.set();
-}
-
-
-inline void
-relayDisable()
-{
-    g_tRelay.reset();
-}
+YogiRelay g_tRelay( k_pinRelayOn, k_pinRelayOff );
 
 
 //================ ADXL =================
@@ -291,7 +160,7 @@ watchdogSleep()
 {
     DEBUG_PRINTLN( "Watchdog Sleep" );
     DEBUG_DELAY( 300 );
-    relayDisable();
+    g_tRelay.reset();  // power down sensors
     adxlSleep();
     WatchDog::setPeriod( OVF_4000MS );
     WatchDog::start();
@@ -304,7 +173,7 @@ watchdogWakeup()
 {
     WatchDog::stop();
     adxlWakeup();
-    relayEnable();
+    g_tRelay.set();
     g_uTimeInterrupt = millis();
     DEBUG_PRINTLN( "Watchdog Wakeup" );
 }
@@ -493,7 +362,7 @@ enterSleep()
     g_tVibeLeft.off();
     g_tVibeRight.off();
 
-    relayDisable();  // power-down sensors
+    g_tRelay.reset();  // powerdown sensors
 
     // don't generate inactivity interrupts during sleep
     adxlDrowsy();
@@ -504,7 +373,7 @@ enterSleep()
     g_tSleep.postSleep();
 
     // we wakeup here
-    relayEnable();
+    g_tRelay.set();
     adxlWakeup();
     DEBUG_PRINTLN( "Wake Up" );
 
@@ -923,8 +792,8 @@ setup()
 {
     DEBUG_OPEN();
 
-    relaySetup();
-    relayEnable();  // power up sensors
+    g_tRelay.init();
+    g_tRelay.set();  // power up sensors
 
     updatePotValues();
 
