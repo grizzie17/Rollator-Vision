@@ -57,10 +57,10 @@ To provide user feedback, there are two vibrators that will be placed, one in ea
 | ADXL345         | Accelerometer            | 1   |
 | 100K            | Resistor                 | 2   |
 | 10K             | Resistor                 | 2   |
-| 1K              | Resistor                 | 1   |
+| 660             | Resistor                 | 1   |
 | 2N2222          | Transistor               | 3   |
 | HFD2-005-M-L2-D | Relay                    | 1   |
-| 1N4007          | Diode                    | -   |
+| 1N4007          | Diode                    | 2   |
 | S9V11MACMA      | Pololu 2.5-16V Regulator | 1   |
 | X0023QDG3D      | Vibrator                 | 2   |
 | 7.4V 12,000mAh  | 18650 (8) Battery Pack   | 2+  |
@@ -289,7 +289,10 @@ Li-Ion battery pack 2S4P 7.4 (Nominal) 12000 mAh
 | 8.22 |    4 | 8/11 |
 | 8.21 |    5 | 8/12 |
 | 8.19 |    6 | 8/13 |
-| 8.19 |    7 | 8/14 |
+| 8.18 |    7 | 8/14 |
+| 8.16 |    8 | 8/15 |
+| 8.16 |    9 | 8/16 |
+| 8.16 |   10 | 8/17 |
 
 Our goal with the Li-Ion pack is to get around four weeks of usage on a single charge.
 
