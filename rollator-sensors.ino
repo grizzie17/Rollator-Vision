@@ -1,5 +1,5 @@
 
-#define _DEBUG
+#define NDEBUG
 #include <YogiDebug.h>
 
 // Control the macros below to enable which relay is used.
@@ -508,15 +508,24 @@ sonicSetup()
 int
 potentiometerRead( uint8_t pin, long nRange )
 {
-    return max( 10, abs( (long)analogRead( pin ) * nRange / 1024 ) );
+    // value of zero indicates no power to potentiometere
+    int nValue = abs( analogRead( pin ) );
+    if ( 0 < nValue )
+        return max( 5, ( (long)nValue * nRange / 1024 ) );
+    else
+        return 0;
 }
 
 void
 updatePotValues()
 {
     pinMode( kPinPotDist, INPUT );
-    g_nPotValueSide = potentiometerRead( kPinPotDist, 100 );
-    g_nPotValueFront = g_nPotValueSide * 3 / 2;
+    int nValue = potentiometerRead( kPinPotDist, 100 );
+    if ( 0 < nValue )
+    {
+        g_nPotValueSide = nValue;
+        g_nPotValueFront = g_nPotValueSide * 2;
+    }
 
     DEBUG_VPRINT( "Pot Values: Side=", g_nPotValueSide );
     DEBUG_VPRINTLN( "; Front=", g_nPotValueFront );
