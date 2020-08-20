@@ -170,7 +170,8 @@ ADXL345 to an Arduino Nano
 | SD0     | -                |                     |
 | SDA     | A4 (SDA) blue    | 10k resistor to VCC |
 | SCL     | A5 (SCL) green   | 10k resistor to VCC |
-
+  
+  
 ![Wiring Diagram](images/adxl345.png)  
 Connection Diagram
 
@@ -204,21 +205,21 @@ The relay being used has been changed to the HFD2/005-M-L2-D which is a double p
 
 ## HC-SR04 Ultrasonic Sensor ##
 
-There are four HC-SR04 sensors.  Two facing forward,
+There are three HC-SR04 sensors.  One facing forward,
 one facing left, one facing right.
 
-| HC-SR04 | Arduino    | Notes          |
-| ------- | ---------- | -------------- |
-| VCC     | 5V         |                |
-| Trigger | D5,7,10,12 | Echo connected |
-| Echo    | Trigger    |                |
-| GND     | GND        |                |
+| HC-SR04 | Arduino | Notes          |
+| ------- | ------- | -------------- |
+| VCC     | 5V      |                |
+| Trigger | D7,8,9  | Echo connected |
+| Echo    | Trigger |                |
+| GND     | GND     |                |
 
 Using the `YogiSonic` library allows us to connect the `trigger` and `echo` pins so we save pins on the Arduino.
 
 ![Wiring Diagram](images/HC-SR04.png)
 
-> The previous wiring diagram is not really correct. The ground and 5V are actually provided via the previously mentioned [relay](#relay).
+> This diagram is not completely accurate but does represent an external battery being sent through a voltage regulator and then a [relay](#relay).
 
 
 -----
@@ -293,6 +294,9 @@ Li-Ion battery pack 2S4P 7.4 (Nominal) 12000 mAh
 | 8.16 |    8 | 8/15 |
 | 8.16 |    9 | 8/16 |
 | 8.16 |   10 | 8/17 |
+| 8.15 |   11 | 8/18 |
+| 8.15 |   12 | 8/19 |
+| 8.15 |   13 | 8/20 |
 
 Our goal with the Li-Ion pack is to get around four weeks of usage on a single charge.
 
