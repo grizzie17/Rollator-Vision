@@ -10,7 +10,7 @@
             "defines": [
                 "ARDUINO=10800",
                 "USBCON",
-                "_DEBUG"
+                "NDEBUG"
             ],
             "includePath": [
                 ".",
@@ -24,13 +24,13 @@
                 "${env:SKETCHLIBS}\\**",
                 "${env:SKETCHLIBS}\\**\\**",
                 "${env:SKETCHLIBS}\\YogiDelay\\src",
+                "${env:SKETCHLIBS}\\YogiHeaders",
                 "${env:SKETCHLIBS}\\YogiPitches\\src",
                 "${env:SKETCHLIBS}\\YogiRelay\\src",
                 "${env:SKETCHLIBS}\\YogiSonic\\src",
-                "${env:SKETCHLIBS}\\SparkFun_ADXL345_Arduino_Library\\src",
                 "${env:SKETCHLIBS}\\Yogi_ADXL345\\src",
-                "${env:SKETCHLIBS}\\WatchDog",
-                "${env:SKETCHLIBS}\\YogiHeaders"
+                "${env:SKETCHLIBS}\\SparkFun_ADXL345_Arduino_Library\\src",
+                "${env:SKETCHLIBS}\\WatchDog"
             ],
             "forcedInclude": [
                 "C:\\Arduino\\hardware\\arduino\\avr\\cores\\arduino\\Arduino.h"
