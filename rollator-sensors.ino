@@ -404,7 +404,6 @@ public:
         return m_tDelay.timesUp( uTimeCurrent );
     }
 
-
     void
     reset()
     {
@@ -414,7 +413,6 @@ public:
         m_nDistCurrent = 0;
         m_nDistPrevious = 0;
     }
-
 
     bool
     isDirty()
@@ -432,9 +430,6 @@ public:
                     distNew = distRetry;
             }
         }
-        else
-        {}
-
 
         m_nDistPrevious = m_nDistCurrent;
         m_nDistCurrent = distNew;
@@ -445,13 +440,11 @@ public:
         return bDirty;
     }
 
-
     inline long
     getDistance()
     {
         return m_nDistCurrent;
     }
-
 
     long
     getDistanceCm()
@@ -461,7 +454,6 @@ public:
             dist = 0;
         return dist;
     }
-
 
 protected:
     char             m_sName[24];
@@ -515,6 +507,7 @@ potentiometerRead( uint8_t pin, long nRange )
     else
         return 0;
 }
+
 
 void
 updatePotValues()
