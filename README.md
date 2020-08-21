@@ -55,15 +55,33 @@ To provide user feedback, there are two vibrators that will be placed, one in ea
 | Nano            | Arduino nano             | 1   |
 | HC-SR04         | Ultrasonic sensor        | 3   |
 | ADXL345         | Accelerometer            | 1   |
+| HFD2-005-M-L2-D | Relay                    | 1   |
+| S9V11MACMA      | Pololu 2.5-16V Regulator | 1   |
+| X0023QDG3D      | Vibrator                 | 2   |
+| 7.4V 12,000mAh  | 18650 (8) Battery Pack   | 2+  |
+|                 |                          |     |
 | 100K            | Resistor                 | 2   |
 | 10K             | Resistor                 | 2   |
 | 660             | Resistor                 | 1   |
 | 2N2222          | Transistor               | 3   |
-| HFD2-005-M-L2-D | Relay                    | 1   |
 | 1N4007          | Diode                    | 2   |
-| S9V11MACMA      | Pololu 2.5-16V Regulator | 1   |
-| X0023QDG3D      | Vibrator                 | 2   |
-| 7.4V 12,000mAh  | 18650 (8) Battery Pack   | 2+  |
+
+## Connectors ##
+
+| Name         | Usage                         | Qty |
+| ------------ | ----------------------------- | --- |
+| 2pin Header  | Battery, Left/Right vibe, LED | 4   |
+| 5pin Header  | Voltage regulator             | 1   |
+| 4pin Header  | Left/Front/Right Ultrasonic   | 3   |
+| 8pin Header  | ADXL345                       | 1   |
+| 15pin Header | Arduino nano                  | 2   |
+|              |                               |     |
+| EC3 Female   | PCB to battery                | 1   |
+| EC3 Male     | battery pack                  | 1   |
+| 3pin balance | battery pack                  | 1   |
+|              |                               |     |
+| RCA Female   | connector to PCB              | 2   |
+| RCA Male     | lead to vibrator              | 2   |
 
 
 -----
@@ -86,6 +104,8 @@ Please see the tables in the sections below for connection details to the Arduin
 The `Battery Pack` will be made from 18650 batteries.  Each pack is configured as 2S4P (2 Series and 4 Parallel).  Each cell is rated at 3000 mAh, providing an overall rating, 7.4V 12000 mAh.
 
 The packs will use an EC3 connector (frequently used on R/C models), and a 3 wire balance connector. This will allow the pack to be charged using a standard R/C balance battery charger.
+
+![battery-pack-circuit](images/battery-pack-circuit.png)
 
 
 -----
@@ -170,6 +190,7 @@ ADXL345 to an Arduino Nano
 | SD0     | -                |                     |
 | SDA     | A4 (SDA) blue    | 10k resistor to VCC |
 | SCL     | A5 (SCL) green   | 10k resistor to VCC |
+|         |                  |                     |
   
   
 ![Wiring Diagram](images/adxl345.png)  
@@ -233,6 +254,32 @@ Using the `YogiSonic` library allows us to connect the `trigger` and `echo` pins
 
 Used in Rollator/Walker hand-grips to notify user of obstacles.
 
+We may need to create a separate attachment point using something like an old style (non-stereo) 3.5mm headphone jack.
+
+
+-----
+
+# Assembly #
+
+* Solder in resistors first.
+* Solder headers for:
+  * battery
+  * voltage regulator
+  * Arduino nano
+  * left/right vibrators
+  * Ultrasonic sensors
+  * LED
+  * accelerometer
+* Solder two NPN BJTs (2N2222)
+* Solder potentiometer
+* Solder relay
+
+* Create wiring harnesses: (provide some slack but not too much). All wiring harnesses will use ribbon cables with Dupont connectors.
+  * battery - 2 wire
+  * left/right vibrators - 2 wire
+  * LED - 2 wire
+  * left/front/right ultrasonic sensors - four wire
+  * ADXL345? - 8 wire
 
 -----
 
@@ -296,7 +343,7 @@ Li-Ion battery pack 2S4P 7.4 (Nominal) 12000 mAh
 | 8.16 |   10 | 8/17 |
 | 8.15 |   11 | 8/18 |
 | 8.15 |   12 | 8/19 |
-| 8.15 |   13 | 8/20 |
+| 8.14 |   13 | 8/20 |
 
 Our goal with the Li-Ion pack is to get around four weeks of usage on a single charge.
 
