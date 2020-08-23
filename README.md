@@ -37,7 +37,7 @@ This first unit will be mounted on the front horizontal bar in front of the stor
 
 The core of the system is an `Arduino nano` microprocessor.  No devices (sensors) are powered directly from the microprocessor with the exception of the ADXL345 accelerometer (which is powered from the microprocessor's 3.3V pin).
 
-One of the main requirements is that there be no user selectable power switch.  To accomplish this we must powerdown or force devices to enter a sleep-mode.  We use an accelerometer to recognize motion (or lack thereof) and wake up or put the microprocessor to sleep as needed.  The microprocessor and the accelerometer are the only items that have continuous power (but both can be put to sleep), all other devices are powered via a 5V relay.  When the microprocessor sleeps the relay disconnects the power.
+One of the main requirements is that there be no need for a user selectable power switch.  To accomplish this we must be very judicious with the power. We will powerdown or force devices to enter a sleep-mode.  We use an accelerometer to recognize motion (or lack thereof) and wake up or put the microprocessor to sleep as needed.  The microprocessor and the accelerometer are the only items that have continuous power (but both can be put to sleep), all other devices are powered via a 5V relay.  When the microprocessor sleeps the relay disconnects the power.
 
 The microprocessor polls three ultrasonic sensors at an effective rate of 12hz (that is 4hz for each sensor multiplied by the number of sensors).  The three ultrasonic sensors are aranged with one forward facing sensor, and two side facing sensors (left and right).
 
@@ -103,11 +103,11 @@ Please see the tables in the sections below for connection details to the Arduin
 
 ![18650 Batteries](images/18650_3000mAh.jpg)
 
-The `Battery Pack` will be made from 18650 batteries.  Each pack is configured as 2S4P (2 Series and 4 Parallel).  Each cell is rated at 3000 mAh, providing an overall rating, 7.4V 12000 mAh.
-
-The packs will use an EC3 connector (frequently used on R/C models), and a 3 wire balance connector. This will allow the pack to be charged using a standard R/C balancing battery charger (that includes a Li-Ion setting).
+The `Battery Pack` will be made from 18650 batteries.  Each pack is configured as 2S4P (2 Series and 4 Parallel).  Each battery cell is rated at 3000 mAh, providing an overall nominal rating, 7.4V 12000 mAh. The actual voltage range is from 8.30V to 5.60V.
 
 ![battery-pack-circuit](images/battery-pack-circuit.png)
+
+The packs will use an EC3 connector (frequently used on R/C models), and a 3 wire balance connector which will allow the pack to be charged using a standard R/C balancing battery charger (that includes a Li-Ion setting).
 
 
 -----
@@ -197,8 +197,6 @@ ADXL345 to an Arduino Nano
   
 ![Wiring Diagram](images/adxl345.png)  
 Connection Diagram
-
-> The `VCC` and `GND` are not actually directly hooked to the Arduino.  They are connected to the previously mentioned [voltage regulator](#voltage-regulator).
 
 
 -----
@@ -352,6 +350,7 @@ Li-Ion battery pack 2S4P 7.4 (Nominal) 12000 mAh
 | 8.13 |   14 | 8/21 |
 |      |      |      |
 | 8.13 |   15 | 8/22 |
+| ?.?? |   16 | 8/23 |
 
 Our goal with the Li-Ion pack is to get around four weeks of usage on a single charge.
 
