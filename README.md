@@ -35,7 +35,7 @@ This first unit will be mounted on the front horizontal bar in front of the stor
 
 ![Circuit](images/rollator-circuit.png)
 
-The core of the system is an `Arduino nano` microprocessor (the diagram shows an UNO).  No devices (sensors) are powered directly from the microprocessor.
+The core of the system is an `Arduino nano` microprocessor.  No devices (sensors) are powered directly from the microprocessor with the exception of the ADXL345 accelerometer (which is powered from the microprocessor's 3.3V pin).
 
 One of the main requirements is that there be no user selectable power switch.  To accomplish this we must powerdown or force devices to enter a sleep-mode.  We use an accelerometer to recognize motion (or lack thereof) and wake up or put the microprocessor to sleep as needed.  The microprocessor and the accelerometer are the only items that have continuous power (but both can be put to sleep), all other devices are powered via a 5V relay.  When the microprocessor sleeps the relay disconnects the power.
 
