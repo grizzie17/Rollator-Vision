@@ -35,8 +35,6 @@ This first unit will be mounted on the front horizontal bar in front of the stor
 
 ![Circuit](images/rollator-circuit.png)
 
-> The diagram above shows an `Arduino UNO` but the real microprocessor will be an `Arduino nano`.
-
 The core of the system is an `Arduino nano` microprocessor (the diagram shows an UNO).  No devices (sensors) are powered directly from the microprocessor.
 
 One of the main requirements is that there be no user selectable power switch.  To accomplish this we must powerdown or force devices to enter a sleep-mode.  We use an accelerometer to recognize motion (or lack thereof) and wake up or put the microprocessor to sleep as needed.  The microprocessor and the accelerometer are the only items that have continuous power (but both can be put to sleep), all other devices are powered via a 5V relay.  When the microprocessor sleeps the relay disconnects the power.
@@ -45,7 +43,8 @@ The microprocessor polls three ultrasonic sensors at an effective rate of 12hz (
 
 To provide user feedback, there are two vibrators that will be placed, one in each handle bar.  No vibration indicates that no obstacles are near.  Vibration from both handles indicates that an obstacle is ahead of the Rollator.  An individual handle vibrating indicates obstacles on the corresponding side.
 
-![Printed Circuit Board](images/PCB.png)
+![Printed Circuit Board](images/PCB.png)  
+Printed Circuit Board Diagram
 
 
 -----
@@ -106,7 +105,7 @@ Please see the tables in the sections below for connection details to the Arduin
 
 The `Battery Pack` will be made from 18650 batteries.  Each pack is configured as 2S4P (2 Series and 4 Parallel).  Each cell is rated at 3000 mAh, providing an overall rating, 7.4V 12000 mAh.
 
-The packs will use an EC3 connector (frequently used on R/C models), and a 3 wire balance connector. This will allow the pack to be charged using a standard R/C balance battery charger.
+The packs will use an EC3 connector (frequently used on R/C models), and a 3 wire balance connector. This will allow the pack to be charged using a standard R/C balancing battery charger (that includes a Li-Ion setting).
 
 ![battery-pack-circuit](images/battery-pack-circuit.png)
 
