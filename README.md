@@ -18,7 +18,7 @@ Medline Empower Rollator Walker
   * three different vibration patterns:
     * front, side, both
 * Battery powered without the need for on/off switches
-  * Battery must last for at least one week but preferred two weeks
+  * Battery must last for at least two weeks but preferred four weeks
 
 This first unit will be mounted on the front horizontal bar in front of the storage bag.
 
@@ -34,6 +34,8 @@ This first unit will be mounted on the front horizontal bar in front of the stor
 ## Overall Circuit ##
 
 ![Circuit](images/rollator-circuit.png)
+
+> The diagram above shows an `Arduino UNO` but the real microprocessor will be an `Arduino nano`.
 
 The core of the system is an `Arduino nano` microprocessor (the diagram shows an UNO).  No devices (sensors) are powered directly from the microprocessor.
 
@@ -58,6 +60,7 @@ To provide user feedback, there are two vibrators that will be placed, one in ea
 | HFD2-005-M-L2-D | Relay                    | 1   |
 | S9V11MACMA      | Pololu 2.5-16V Regulator | 1   |
 | X0023QDG3D      | Vibrator                 | 2   |
+| LED             | Status LED               | 1   |
 | 7.4V 12,000mAh  | 18650 (8) Battery Pack   | 2+  |
 |                 |                          |     |
 | 100K            | Resistor                 | 2   |
@@ -158,7 +161,7 @@ LiPo VIN cutoff should be 7.0V and the fully charged battery pack should be 8.4V
 EN = 8.4V * 0.7V / 7.0V  
 EN = 0.87
 
-Li-Ion VIN cutoff should be 5.6V and the fully charged battery pack should be 8.4V.
+Li-Ion VIN cutoff should be 5.6V and the fully charged battery pack should be 8.3V.
 
 EN = 8.3V * 0.7V / 5.6V  
 EN = 1.038
@@ -209,14 +212,14 @@ The relay is used to power-up the ultrasonic sensors and other devices (with the
 
 ![Relay-Pins](images/Relay-pins.png)
 
-> Please note that the pins identified above are not sequential.  They are using position on a breadboard (e.g., pins 3,5,7,10,12,14) are non-existant. In our case, we will not be using pins 6, 9-12.
+> Please note that the pins identified above are not sequential.  They are using position on a breadboard (e.g., pins 3,5,7,10,12,14) are non-existant. In our case, we will not be using pins 6, 9-13.
 
 The relay being used has been changed to the HFD2/005-M-L2-D which is a double poll double throw relay.  The important part of this relay is that it does not require power to maintain set/reset condition.  There are two pins that control the unit; one for `set` (on) and the other for `reset` (off).  Setting the appropriate pin to +5V for 5 milliseconds will change the relay setting.
 
 | Relay | Arduino | Circuit         |
 | ----- | ------- | --------------- |
-| 1     | D3      |                 |
-| 2     | D4      |                 |
+| 1     | D3      | (reset)         |
+| 2     | D4      | (set)           |
 | 4     |         | VCC (from Reg.) |
 | 8     |         | OUT +5V         |
 | 16,15 | GND     | GND             |
@@ -224,14 +227,14 @@ The relay being used has been changed to the HFD2/005-M-L2-D which is a double p
 
 -----
 
-## HC-SR04 Ultrasonic Sensor ##
+## HC-SR04 Ultrasonic Sensors ##
 
 There are three HC-SR04 sensors.  One facing forward,
 one facing left, one facing right.
 
 | HC-SR04 | Arduino | Notes          |
 | ------- | ------- | -------------- |
-| VCC     | 5V      |                |
+| VCC     | -       | Relay VOUT     |
 | Trigger | D7,8,9  | Echo connected |
 | Echo    | Trigger |                |
 | GND     | GND     |                |
@@ -254,7 +257,8 @@ Using the `YogiSonic` library allows us to connect the `trigger` and `echo` pins
 
 Used in Rollator/Walker hand-grips to notify user of obstacles.
 
-We may need to create a separate attachment point using something like an old style (non-stereo) 3.5mm headphone jack.
+We will use RCA jacks to connect the vibrator to the sensor housing (box).
+
 
 
 -----
@@ -275,10 +279,10 @@ We may need to create a separate attachment point using something like an old st
 * Solder relay
 
 * Create wiring harnesses: (provide some slack but not too much). All wiring harnesses will use ribbon cables with Dupont connectors.
-  * battery - 2 wire
-  * left/right vibrators - 2 wire
+  * battery - 2 wire - with EC3 connector on the battery side
+  * left/right vibrators - 2 wire - male connectors to female RCA jacks - vibrator to male RCA jacks
   * LED - 2 wire
-  * left/front/right ultrasonic sensors - four wire
+  * left/front/right ultrasonic sensors - four wire - male on one side and female on the other
   * ADXL345? - 8 wire
 
 -----
@@ -316,13 +320,14 @@ LiPo battery 2S 7.4mAh (nominal) 5200 mAh 35C
 | 8.19 |    5 | 8/1  |
 | 8.17 |    6 | 8/2  |
 | 8.14 |    7 | 8/3  |
+|      |      |      |
 | 8.09 |    8 | 8/4  |
 | 8.04 |    9 | 8/5  |
 | 8.00 |   10 | 8/6  |
 | 7.98 |   11 | 8/7  |
 | 7.97 |   12 | 8/8  |
 
-At the finishing voltage and the discharge rate we would most likely get three weeks of usage on a single charge.
+At the finishing voltage and the discharge rate we would most likely get close to three weeks of usage on a single charge.
 
 ## Endurance Test w/ 18650 Battery Pack ##
 
@@ -338,12 +343,16 @@ Li-Ion battery pack 2S4P 7.4 (Nominal) 12000 mAh
 | 8.21 |    5 | 8/12 |
 | 8.19 |    6 | 8/13 |
 | 8.18 |    7 | 8/14 |
+|      |      |      |
 | 8.16 |    8 | 8/15 |
 | 8.16 |    9 | 8/16 |
 | 8.16 |   10 | 8/17 |
 | 8.15 |   11 | 8/18 |
 | 8.15 |   12 | 8/19 |
 | 8.14 |   13 | 8/20 |
+| 8.13 |   14 | 8/21 |
+|      |      |      |
+| 8.13 |   15 | 8/22 |
 
 Our goal with the Li-Ion pack is to get around four weeks of usage on a single charge.
 
