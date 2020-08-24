@@ -7,6 +7,13 @@ The first test unit will be married to a `Medline Empower Rollator Walker`.
 ![Medline Empower Rollator Walker](images/medline_empower_rollator_black.jpg)  
 Medline Empower Rollator Walker
 
+This first unit will be mounted on the front horizontal bar in front of the storage bag.
+
+| description       | dimension |
+| ----------------- | --------- |
+| Overall Width     | 26.5 in   |
+| Cross Bar Width   | ~18 in    |
+| ~ Cross Bar Angle | 60 deg    |
 
 -----
 
@@ -20,13 +27,6 @@ Medline Empower Rollator Walker
 * Battery powered without the need for on/off switches
   * Battery must last for at least two weeks but preferred four weeks
 
-This first unit will be mounted on the front horizontal bar in front of the storage bag.
-
-| description       | dimension |
-| ----------------- | --------- |
-| Overall Width     | 26.5 in   |
-| Cross Bar Width   | ~18 in    |
-| ~ Cross Bar Angle | 60 deg    |
 
 
 -----
@@ -350,7 +350,8 @@ Li-Ion battery pack 2S4P 7.4 (Nominal) 12000 mAh
 | 8.13 |   14 | 8/21 |
 |      |      |      |
 | 8.13 |   15 | 8/22 |
-| ?.?? |   16 | 8/23 |
+| 8.12 |   16 | 8/23 |
+| ?.?? |   17 | 8/24 |
 
 Our goal with the Li-Ion pack is to get around four weeks of usage on a single charge.
 
