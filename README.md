@@ -103,7 +103,7 @@ Please see the tables in the sections below for connection details to the Arduin
 
 ![18650 Batteries](images/18650_3000mAh.jpg)
 
-The `Battery Pack` will be made from 18650 batteries.  Each pack is configured as 2S4P (2 Series and 4 Parallel).  Each battery cell is rated at 3000 mAh, providing an overall nominal rating, 7.4V 12000 mAh. The actual voltage range is from 8.30V to 5.60V.
+The `Battery Pack` will be made from 18650 batteries.  Each pack is configured as 2S4P (2 Series and 4 Parallel).  Each battery cell is rated at 3000 mAh, providing an overall nominal rating, 7.4V 12000 mAh. The actual voltage range is from 8.30V to 5.80V.
 
 ![battery-pack-circuit](images/battery-pack-circuit.png)
 
@@ -160,10 +160,10 @@ LiPo VIN cutoff should be 7.0V and the fully charged battery pack should be 8.4V
 EN = 8.4V * 0.7V / 7.0V  
 EN = 0.87
 
-Li-Ion VIN cutoff should be 5.6V and the fully charged battery pack should be 8.3V.
+Li-Ion VIN cutoff should be 5.8V and the fully charged battery pack should be 8.3V.
 
-EN = 8.3V * 0.7V / 5.6V  
-EN = 1.038
+EN = 8.3V * 0.7V / 5.8V  
+EN = 1.0017
 
 
 -----
@@ -355,4 +355,4 @@ Our goal with the Li-Ion pack is to get around four weeks of usage on a single c
 | Type      | Nominal | Max  | Min |
 | --------- | ------- | ---- | --- |
 | 2S LiPo   | 7.4     | 8.40 | 7.0 |
-| 2S Li-Ion | 7.4     | 8.30 | 5.6 |
+| 2S Li-Ion | 7.4     | 8.30 | 5.8 |
