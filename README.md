@@ -1,6 +1,6 @@
-# Rollator-Sensors #
+# Rollator-Vision #
 
-Ultrasonic sensors for a Rollator (Walker).  The goal is to provide assistance for visually impared individuals that must use a walker and thus can not use a blind cane.
+Ultrasonic sensors for a Rollator (Walker).  The goal is to provide assistance for visually impared individuals that must use a walker and thus can not use a blind tapper cane.
 
 The first test unit will be married to a `Medline Empower Rollator Walker`.
 
@@ -262,7 +262,9 @@ We will use RCA jacks to connect the vibrator to the sensor housing (box).
 
 # Assembly #
 
-* Solder in resistors first.
+* Solder potentiometer
+* Solder relay
+* Solder in resistors
 * Solder headers for:
   * battery
   * voltage regulator
@@ -272,8 +274,6 @@ We will use RCA jacks to connect the vibrator to the sensor housing (box).
   * LED
   * accelerometer
 * Solder two NPN BJTs (2N2222)
-* Solder potentiometer
-* Solder relay
 
 * Create wiring harnesses: (provide some slack but not too much). All wiring harnesses will use ribbon cables with Dupont connectors.
   * battery - 2 wire - with EC3 connector on the battery side
