@@ -309,19 +309,10 @@ LiPo battery 2S 7.4mAh (nominal) 5200 mAh 35C
 
 | mA   |  Day | Date |
 | ---- | ---: | ---- |
-| 8.39 |    0 | 7/28 |
-| 8.32 |    1 | 7/28 |
-| 8.30 |    2 | 7/29 |
-| 8.25 |    3 | 7/30 |
-| 8.21 |    4 | 7/31 |
-| 8.19 |    5 | 8/1  |
-| 8.17 |    6 | 8/2  |
+| 8.39 |    1 | 7/28 |
 | 8.14 |    7 | 8/3  |
 |      |      |      |
 | 8.09 |    8 | 8/4  |
-| 8.04 |    9 | 8/5  |
-| 8.00 |   10 | 8/6  |
-| 7.98 |   11 | 8/7  |
 | 7.97 |   12 | 8/8  |
 
 At the finishing voltage and the discharge rate we would most likely get close to three weeks of usage on a single charge.
@@ -351,7 +342,9 @@ Li-Ion battery pack 2S4P 7.4 (Nominal) 12000 mAh
 |      |      |      |
 | 8.13 |   15 | 8/22 |
 | 8.12 |   16 | 8/23 |
-| ?.?? |   17 | 8/24 |
+| 8.10 |   17 | 8/24 |
+| 8.09 |   18 | 8/25 |
+| 8.?? |   19 | 8/26 |
 
 Our goal with the Li-Ion pack is to get around four weeks of usage on a single charge.
 
