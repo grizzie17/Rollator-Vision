@@ -39,7 +39,7 @@ The core of the system is an `Arduino nano` microprocessor.  No devices (sensors
 
 One of the main requirements is that there be no need for a user selectable power switch.  To accomplish this we must be very judicious with the power. We will powerdown or force devices to enter a sleep-mode.  We use an accelerometer to recognize motion (or lack thereof) and wake up or put the microprocessor to sleep as needed.  The microprocessor and the accelerometer are the only items that have continuous power (but both can be put to sleep), all other devices are powered via a 5V relay.  When the microprocessor sleeps the relay disconnects the power.
 
-The microprocessor polls three ultrasonic sensors at an effective rate of 12hz (that is 4hz for each sensor multiplied by the number of sensors).  The three ultrasonic sensors are aranged with one forward facing sensor, and two side facing sensors (left and right).
+The microprocessor polls three ultrasonic sensors at an effective rate of 12hz (that is 4hz for each sensor multiplied by the number of sensors).  The three ultrasonic sensors are arranged with one forward facing sensor, and two side facing sensors (left and right).
 
 To provide user feedback, there are two vibrators that will be placed, one in each handle bar.  No vibration indicates that no obstacles are near.  Vibration from both handles indicates that an obstacle is ahead of the Rollator.  An individual handle vibrating indicates obstacles on the corresponding side.
 
@@ -49,50 +49,11 @@ Printed Circuit Board Diagram
 
 -----
 
-## Parts List ##
-
-| ID              | Name                     | Qty |
-| --------------- | ------------------------ | --- |
-| Nano            | Arduino nano             | 1   |
-| HC-SR04         | Ultrasonic sensor        | 3   |
-| ADXL345         | Accelerometer            | 1   |
-| HFD2-005-M-L2-D | Relay                    | 1   |
-| S9V11MACMA      | Pololu 2.5-16V Regulator | 1   |
-| X0023QDG3D      | Vibrator                 | 2   |
-| LED             | Status LED               | 1   |
-| 7.4V 12,000mAh  | 18650 (8) Battery Pack   | 2+  |
-|                 |                          |     |
-| 100K            | Resistor                 | 2   |
-| 10K             | Resistor                 | 2   |
-| 660             | Resistor                 | 1   |
-| 2N2222          | Transistor               | 3   |
-| 1N4007          | Diode                    | 2   |
-
-## Connectors ##
-
-| Name         | Usage                         | Qty |
-| ------------ | ----------------------------- | --- |
-| 2pin Header  | Battery, Left/Right vibe, LED | 4   |
-| 5pin Header  | Voltage regulator             | 1   |
-| 4pin Header  | Left/Front/Right Ultrasonic   | 3   |
-| 8pin Header  | ADXL345                       | 1   |
-| 15pin Header | Arduino nano                  | 2   |
-|              |                               |     |
-| EC3 Female   | PCB to battery                | 1   |
-| EC3 Male     | battery pack                  | 1   |
-| 3pin balance | battery pack                  | 1   |
-|              |                               |     |
-| RCA Female   | connector to PCB              | 2   |
-| RCA Male     | lead to vibrator              | 2   |
-
-
------
-
 ## Arduino nano ##
 
 ![Arduino Nano V3](images/arduino-nano-rev3.png)
 
-The `Arduino Nano V3` microprocessor is the heart of our Rollator-sensor project.
+The `Arduino Nano V3` microprocessor is the heart of our Rollator-Vision project.
 
 Please see the tables in the sections below for connection details to the Arduino.
 
@@ -260,6 +221,71 @@ We will use RCA jacks to connect the vibrator to the sensor housing (box).
 
 -----
 
+## Parts List ##
+
+| ID              | Name                     | Qty |
+| --------------- | ------------------------ | --- |
+| Nano            | Arduino nano V3          | 1   |
+| HC-SR04         | Ultrasonic sensor        | 3   |
+| ADXL345         | Accelerometer            | 1   |
+| HFD2-005-M-L2-D | Latching Relay           | 1   |
+| S9V11MACMA      | Pololu 2.5-16V Regulator | 1   |
+| X0023QDG3D      | Vibrator                 | 2   |
+| LED             | Status LED               | 1   |
+| 7.4V 12,000mAh  | 18650 (8) Battery Pack   | 2+  |
+|                 |                          |     |
+| 100K            | Resistor                 | 2   |
+| 10K             | Resistor                 | 2   |
+| 660             | Resistor                 | 2   |
+| 2N2222          | Transistor               | 3   |
+| 1N4007          | Diode                    | 2   |
+
+## Connectors ##
+
+| Name         | Usage                         | Qty |
+| ------------ | ----------------------------- | --- |
+| 2pin Header  | Battery, Left/Right vibe, LED | 4   |
+| 5pin Header  | Voltage regulator             | 1   |
+| 4pin Header  | Left/Front/Right Ultrasonic   | 3   |
+| 8pin Header  | ADXL345                       | 1   |
+| 15pin Header | Arduino nano                  | 2   |
+|              |                               |     |
+| EC3 Female   | PCB to battery                | 1   |
+| EC3 Male     | battery pack                  | 2   |
+| 3pin balance | battery pack                  | 2   |
+|              |                               |     |
+| RCA Female   | connector to PCB              | 2   |
+| RCA Male     | lead to vibrator              | 2   |
+
+## Wiring Harnesses ##
+
+### Battery Pack (2) ###
+
+Two wiring harnesses per battery pack:
+
+* EC3 Female connector, 16awg (red and black) wire (about 5"), soldered directly to pack.
+
+* 3pin balance lead, soldered directly to three connections.
+
+### Battery Connector ###
+
+* EC3 Male connector, 22awg wire, 2pin male Dupont connector
+
+### Vibrator (2) ###
+
+Two wiring harnesses:
+
+* 2pin male Dupont connector, 22awg wire, RCA Female connector.  RCA Female connectors will be mounted in top of the sensor box (one left and one right).
+
+* RCA Male connector with attached wiring directly soldered to the vibrators (one left and one right).
+
+### Ultrasonic Sensors (3) ###
+
+* 4pin male Dupont connector, 4-wire ribbon cable, 4pin female Dupont connector
+
+
+-----
+
 # Assembly #
 
 * Solder potentiometer
@@ -344,7 +370,8 @@ Li-Ion battery pack 2S4P 7.4 (Nominal) 12000 mAh
 | 8.12 |   16 | 8/23 |
 | 8.10 |   17 | 8/24 |
 | 8.09 |   18 | 8/25 |
-| 8.?? |   19 | 8/26 |
+| 8.07 |   19 | 8/26 |
+| 8.?? |   20 | 8/27 |
 
 Our goal with the Li-Ion pack is to get around four weeks of usage on a single charge.
 
