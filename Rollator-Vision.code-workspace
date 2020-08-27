@@ -8,6 +8,14 @@
 		"recommendations": [
 			"vsciot-vscode.vscode-arduino",
 			"ms-vscode.cpptools"
+		],
+		"unwantedRecommendations": [
+			"maelvalais.autoconf",
+			"heaths.vscode-guid",
+			"brapifra.phpserver",
+			"humao.rest-client",
+			"liximomo.sftp",
+			"laurenttreguier.uncrustify"
 		]
 	},
 	"settings": {
