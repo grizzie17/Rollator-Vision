@@ -2,9 +2,6 @@
 #define NDEBUG
 #include <YogiDebug.h>
 
-// Control the macros below to enable which relay is used.
-//#define RELAY_HFD2
-#define RELAY_SONGLE
 #include <YogiRelay.h>
 
 #include <YogiDelay.h>
@@ -27,9 +24,27 @@
 //#define ANTIVIBE
 
 
+// Control the macros below to enable which relay is used.
+//#define RELAY_HFD2
+#define RELAY_SONGLE
+// uncomment following line to build confirmation of
+// relay setting
+//#define RELAY_CONFIRM
+
+
 const uint8_t k_pinINT = 2;  // INT0
 const uint8_t k_pinRelayOn = 3;
+#if defined( RELAY_SONGLE )
+const uint8_t k_pinRelayOff = 0;
+const uint8_t k_pinRelayConfirm = 0;
+#else
 const uint8_t k_pinRelayOff = 4;
+#    if defined( RELAY_CONFIRM )
+const uint8_t k_pinRelayConfirm = 12;
+#    else
+const uint8_t k_pinRelayConfirm = 0;
+#    endif
+#endif
 
 
 const uint8_t kPinVibeLeft = 5;   // PWM
@@ -87,7 +102,7 @@ YogiSleep g_tSleep;
 
 //============== RELAY ===============
 
-YogiRelay g_tRelay( k_pinRelayOn, k_pinRelayOff );
+YogiRelay g_tRelay( k_pinRelayOn, k_pinRelayOff, k_pinRelayConfirm );
 
 
 //================ ADXL =================
