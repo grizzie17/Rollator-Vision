@@ -12,7 +12,7 @@ This first unit will be mounted on the front horizontal bar in front of the stor
 | description       | dimension |
 | ----------------- | --------- |
 | Overall Width     | 26.5 in   |
-| Cross Bar Width   | ~18 in    |
+| Cross Bar Width   | ~17 in    |
 | ~ Cross Bar Angle | 60 deg    |
 
 -----
@@ -121,9 +121,9 @@ LiPo VIN cutoff should be 7.0V and the fully charged battery pack should be 8.4V
 EN = 8.4V * 0.7V / 7.0V  
 EN = 0.87
 
-Li-Ion VIN cutoff should be 5.8V and the fully charged battery pack should be 8.3V.
+Li-Ion VIN cutoff should be 5.8V and the fully charged battery pack should be 8.28V.
 
-EN = 8.3V * 0.7V / 5.8V  
+EN = 8.28V * 0.7V / 5.8V  
 EN = 1.0017
 
 
@@ -371,9 +371,22 @@ Li-Ion battery pack 2S4P 7.4 (Nominal) 12000 mAh
 | 8.10 |   17 | 8/24 |
 | 8.09 |   18 | 8/25 |
 | 8.07 |   19 | 8/26 |
-| 8.?? |   20 | 8/27 |
+| 8.06 |   20 | 8/27 |
+| 8.04 |   21 | 8/28 |
+|      |      |      |
+| 8.03 |   22 | 8/29 |
+| ?.?? |   23 | 8/30 |
 
 Our goal with the Li-Ion pack is to get around four weeks of usage on a single charge.
+
+
+## Endurance Test w/ 18650 Battery Pack ##
+
+Li-Ion battery pack 2S2P 7.4 (Nominal) 6000 mAh
+
+| mA   |  Day | Date |
+| ---- | ---: | ---- |
+| 8.24 |    1 | 9/7  |
 
 
 
