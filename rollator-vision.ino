@@ -1,5 +1,5 @@
 
-#define NDEBUG
+#define _DEBUG
 #include <YogiDebug.h>
 
 #include <YogiRelay.h>
@@ -25,8 +25,8 @@
 
 
 // Control the macros below to enable which relay is used.
-//#define RELAY_HFD2
-#define RELAY_SONGLE
+#define RELAY_HFD2
+//#define RELAY_SONGLE
 // uncomment following line to build confirmation of
 // relay setting
 //#define RELAY_CONFIRM
@@ -59,6 +59,8 @@ const uint8_t kPinSonicTrigFront = 8;
 
 const uint8_t kPinSonicEchoRight = 9;
 const uint8_t kPinSonicTrigRight = 9;
+
+const uint8_t k_pinStatus = LED_BUILTIN;
 
 
 const uint8_t kPinPotDist = A0;
@@ -128,6 +130,7 @@ adxlDrowsy()
     g_uCountInterrupt = 0;
     adxl.setInterruptMask( 0 );
     adxl.getInterruptSource();  // clear mInterrupts
+    g_tRelay.reset();           // powerdown sensors
 
     adxl.setInterruptMask( k_maskActivity );
     adxl.setLowPower( true );
@@ -377,7 +380,6 @@ enterSleep()
     g_tVibeLeft.off();
     g_tVibeRight.off();
 
-    g_tRelay.reset();  // powerdown sensors
 
     // don't generate inactivity interrupts during sleep
     adxlDrowsy();
@@ -515,10 +517,12 @@ sonicSetup()
 int
 potentiometerRead( uint8_t pin, long nRange )
 {
-    // value of zero indicates no power to potentiometere
+    // value of zero indicates no power to potentiometer
+    pinMode( pin, INPUT );
+    delay( 500 );
     int nValue = abs( analogRead( pin ) );
     if ( 0 < nValue )
-        return max( 5, ( (long)nValue * nRange / 1024 ) );
+        return max( 5, ( (long)nValue * nRange / 2047 ) );
     else
         return 0;
 }
@@ -527,8 +531,8 @@ potentiometerRead( uint8_t pin, long nRange )
 void
 updatePotValues()
 {
-    pinMode( kPinPotDist, INPUT );
     int nValue = potentiometerRead( kPinPotDist, 100 );
+    DEBUG_VPRINTLN( "Raw Pot = ", nValue );
     if ( 0 < nValue )
     {
         g_nPotValueSide = nValue;
@@ -638,6 +642,7 @@ orientationVertical()
                 g_tAvgRight.reset();
                 g_tVibeLeft.reset();
                 g_tVibeRight.reset();
+
                 g_nSonicCycle = 0;
                 g_nSonicCount = 0;
             }
@@ -689,6 +694,7 @@ orientationVertical()
 
                 bool    bVibeLeft = false;
                 bool    bVibeRight = false;
+                bool    bStatus = false;
                 uint8_t nVibeValueLeft = 0;
                 uint8_t nVibeValueFront = 0;
                 uint8_t nVibeValueRight = 0;
@@ -716,12 +722,14 @@ orientationVertical()
                     if ( 1 < nL )
                     {
                         bVibeLeft = true;
+                        bStatus = true;
                         nVibeValueLeft = max( nVibeValueLeft, nVibeValueFront );
                         g_tVibeLeft.setPattern( g_nVibeCountBoth, g_aVibeBoth );
                     }
                     else if ( 1 < nR )
                     {
                         bVibeRight = true;
+                        bStatus = true;
                         nVibeValueRight
                                 = max( nVibeValueRight, nVibeValueFront );
                         g_tVibeRight.setPattern(
@@ -731,6 +739,7 @@ orientationVertical()
                     {
                         bVibeLeft = true;
                         bVibeRight = true;
+                        bStatus = true;
                         nVibeValueLeft = nVibeValueFront;
                         nVibeValueRight = nVibeValueFront;
                         g_tVibeLeft.setPattern(
@@ -742,11 +751,13 @@ orientationVertical()
                 else if ( 1 < nL )
                 {
                     bVibeLeft = true;
+                    bStatus = true;
                     g_tVibeLeft.setPattern( g_nVibeCountSide, g_aVibeSide );
                 }
                 else if ( 1 < nR )
                 {
                     bVibeRight = true;
+                    bStatus = true;
                     g_tVibeRight.setPattern( g_nVibeCountSide, g_aVibeSide );
                 }
 
@@ -761,6 +772,11 @@ orientationVertical()
                     g_tVibeRight.on( nVibeValueRight );
                 else
                     g_tVibeRight.off();
+
+                if ( bStatus )
+                    digitalWrite( k_pinStatus, HIGH );
+                else
+                    digitalWrite( k_pinStatus, LOW );
 
 
                 g_tVibeLeft.sync( g_tVibeRight );
@@ -809,7 +825,10 @@ setup()
 {
     DEBUG_OPEN();
 
+    pinMode( k_pinStatus, OUTPUT );
+
     g_tRelay.init();
+    delay( 100 );
     g_tRelay.set();  // power up sensors
 
     updatePotValues();
@@ -861,3 +880,5 @@ loop()
         }
     }
 }
+
+// Simetherone (for Dad's gas problem)
