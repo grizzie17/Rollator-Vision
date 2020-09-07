@@ -22,11 +22,7 @@
 		// arduino
 		"arduino.path": "C:/Arduino",
 		"arduino.commandPath": "arduino_debug.exe",
-		"arduino.defaultBaudRate": 9600,
-		// C++
-		"C_Cpp.clang_format_path": "C:/Program Files/LLVM/bin/clang-format.exe",
-		"C_Cpp.clang_format_style": "file",
-		"C_Cpp.formatting": "Default",
+		"arduino.defaultBaudRate": 115200,
 		// editor
 		"editor.formatOnSave": true,
 		"editor.formatOnType": true,
