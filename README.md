@@ -33,7 +33,7 @@ This first unit will be mounted on the front horizontal bar in front of the stor
 
 ## Overall Circuit ##
 
-![Circuit](images/rollator-circuit.png)
+![Circuit](images/rollator-circuit-v6.png)
 
 The core of the system is an `Arduino nano` microprocessor.  No devices (sensors) are powered directly from the microprocessor with the exception of the ADXL345 accelerometer (which is powered from the microprocessor's 3.3V pin).
 
@@ -43,7 +43,7 @@ The microprocessor polls three ultrasonic sensors at an effective rate of 12hz (
 
 To provide user feedback, there are two vibrators that will be placed, one in each handle bar.  No vibration indicates that no obstacles are near.  Vibration from both handles indicates that an obstacle is ahead of the Rollator.  An individual handle vibrating indicates obstacles on the corresponding side.
 
-![Printed Circuit Board](images/PCB.png)  
+![Printed Circuit Board](images/PCB-v6.png)  
 Printed Circuit Board Diagram
 
 
@@ -64,7 +64,7 @@ Please see the tables in the sections below for connection details to the Arduin
 
 ![18650 Batteries](images/18650_3000mAh.jpg)
 
-The `Battery Pack` will be made from 18650 batteries.  Each pack is configured as 2S4P (2 Series and 4 Parallel).  Each battery cell is rated at 3000 mAh, providing an overall nominal rating, 7.4V 12000 mAh. The actual voltage range is from 8.30V to 5.80V.
+The `Battery Pack` will be made from 18650 batteries.  Each pack is configured as 2S4P (2 Series and 4 Parallel).  Each battery cell is rated at 3000 mAh, providing an overall nominal rating, 7.4V 12000 mAh. The actual voltage range is from 8.30V to 5.80V.  We are also experimenting with a 2S2P battery pack with half the milliamp-hour rating.
 
 ![battery-pack-circuit](images/battery-pack-circuit.png)
 
@@ -98,6 +98,8 @@ Pololu 2.5-16V Fine-Adjust Step-Up/Step-Down Voltage Regulator w/ Adjustable Low
 
 The output voltage of the regulator is controlled with a 12-turn precision potentiometer. Turning the potentiometer clockwise increases the output voltage, and it can be measured using a multimeter.
 
+> Connect your powersupply (fully charged battery) to the VIN and GND. Connect your multimeter to the GND and VOUT.  Adjust the potentiometer so the VOUT is 5.15V.
+
 ### Setting the cutoff voltage ###
 
 The low VIN cutoff voltage of the regulator is controlled by adjusting the voltage at the EN pin with a 12-turn precision potentiometer. When the voltage on the EN pin falls below 0.7V the regulator is put in a low-power sleep state and when the voltage on EN rises back above 0.8V the regulator is turned back on. Turning the potentiometer clockwise increases the low-voltage cutoff. The cutoff voltage can be set by measuring the voltage on the VIN and EN pins and using the potentiometer to adjust the voltage on EN according to the following equation:
@@ -116,14 +118,16 @@ Note that the regulator’s low VIN cutoff behavior includes hysteresis: the reg
 
 ### So for our purposes ###
 
+> Connect your powersupply (battery) to the VIN and GND. Connect your multimeter to GND and EN pins to correctly measure and adjust the cutoff voltage.
+
 LiPo VIN cutoff should be 7.0V and the fully charged battery pack should be 8.4V.
 
 EN = 8.4V * 0.7V / 7.0V  
 EN = 0.87
 
-Li-Ion VIN cutoff should be 5.8V and the fully charged battery pack should be 8.28V.
+Li-Ion VIN cutoff should be 5.8V and the fully charged battery pack should be 8.3V.
 
-EN = 8.28V * 0.7V / 5.8V  
+EN = 8.3V * 0.7V / 5.8V  
 EN = 1.0017
 
 
@@ -150,7 +154,7 @@ ADXL345 to an Arduino Nano
 | CS      | 3.3V             |                     |
 | INT1    | D2 (INT0) Yellow | use Interrupts      |
 | INT2    | -                |                     |
-| SD0     | -                |                     |
+| SD0     | GND              |                     |
 | SDA     | A4 (SDA) blue    | 10k resistor to VCC |
 | SCL     | A5 (SCL) green   | 10k resistor to VCC |
 |         |                  |                     |
@@ -269,7 +273,7 @@ Two wiring harnesses per battery pack:
 
 ### Battery Connector ###
 
-* EC3 Male connector, 22awg wire, 2pin male Dupont connector
+* EC3 Male connector, 16awg (red and black) wire, 2pin male Dupont connector
 
 ### Vibrator (2) ###
 
@@ -331,7 +335,7 @@ Question: Why is the "Pololu to Main" more than the "Battery to Pololu"?
 
 ## Endurance Test w/ LiPo Pack ##
 
-LiPo battery 2S 7.4mAh (nominal) 5200 mAh 35C
+LiPo battery 2S 7.4V (nominal) 5200 mAh 35C
 
 | mA   |  Day | Date |
 | ---- | ---: | ---- |
@@ -343,50 +347,65 @@ LiPo battery 2S 7.4mAh (nominal) 5200 mAh 35C
 
 At the finishing voltage and the discharge rate we would most likely get close to three weeks of usage on a single charge.
 
-## Endurance Test w/ 18650 Battery Pack ##
+## Endurance Test w/ 18650 2S4P Battery Pack ##
 
-Li-Ion battery pack 2S4P 7.4 (Nominal) 12000 mAh
+Li-Ion battery pack 2S4P 7.4V (Nominal) 12000 mAh
 
 | mA   |  Day | Date |
 | ---- | ---: | ---- |
-| 8.30 |    0 | 8/8  |
-| 8.28 |    1 | 8/8  |
-| 8.25 |    2 | 8/9  |
-| 8.24 |    3 | 8/10 |
-| 8.22 |    4 | 8/11 |
-| 8.21 |    5 | 8/12 |
-| 8.19 |    6 | 8/13 |
+| 8.30 |    1 | 8/8  |
 | 8.18 |    7 | 8/14 |
 |      |      |      |
 | 8.16 |    8 | 8/15 |
-| 8.16 |    9 | 8/16 |
-| 8.16 |   10 | 8/17 |
-| 8.15 |   11 | 8/18 |
-| 8.15 |   12 | 8/19 |
-| 8.14 |   13 | 8/20 |
 | 8.13 |   14 | 8/21 |
 |      |      |      |
 | 8.13 |   15 | 8/22 |
-| 8.12 |   16 | 8/23 |
-| 8.10 |   17 | 8/24 |
-| 8.09 |   18 | 8/25 |
-| 8.07 |   19 | 8/26 |
-| 8.06 |   20 | 8/27 |
 | 8.04 |   21 | 8/28 |
 |      |      |      |
 | 8.03 |   22 | 8/29 |
 | ?.?? |   23 | 8/30 |
 
-Our goal with the Li-Ion pack is to get around four weeks of usage on a single charge.
+Our goal with the Li-Ion pack is to get around four weeks of usage on a single charge.  At the current discharge rate we would most likely get five or more weeks of usage on a single charge.
 
 
-## Endurance Test w/ 18650 Battery Pack ##
+## Endurance Test w/ 18650 2S2P Battery Pack ##
 
-Li-Ion battery pack 2S2P 7.4 (Nominal) 6000 mAh
+Li-Ion battery pack 2S2P 7.4V (Nominal) 6000 mAh.
+
+The desire with the 2S2P is to be lighter and the housing can be made smaller for standard walkers.
 
 | mA   |  Day | Date |
 | ---- | ---: | ---- |
-| 8.24 |    1 | 9/7  |
+| 8.26 |    0 | 9/11 |
+| 8.24 |    1 | 9/11 |
+| 8.21 |    2 | 9/12 |
+| 8.19 |    3 | 9/13 |
+| 8.17 |    4 | 9/14 |
+| 8.16 |    5 | 9/15 |
+| 8.15 |    6 | 9/16 |
+| 8.13 |    7 | 9/17 |
+|      |      |      |
+| 8.?? |    8 | 9/18 |
+| 8.10 |    9 | 9/19 |
+| ?    |   10 | 9/20 |
+| ?    |   11 | 9/21 |
+| ?    |   12 | 9/22 |
+| ?    |   13 | 9/23 |
+| ?    |   14 | 9/24 |
+| ?    |      |      |
+| 7.91 |   15 | 9/25 |
+| 7.88 |   16 | 9/26 |
+| 7.86 |   17 | 9/27 |
+| 7.?? |   18 | 9/28 |
+| 7.81 |   19 | 9/29 |
+| 7.79 |   20 | 9/30 |
+| 7.76 |   21 | 10/1 |
+|      |      |      |
+| 7.?? |   22 | 10/2 |
+| 7.64 |   23 | 10/3 |
+| 7.46 |   24 | 10/4 |
+
+Theroetically, this battery pack should achieve half of the 2S4P battery pack.  Three weeks might be possible.
 
 
 
