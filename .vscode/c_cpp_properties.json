@@ -24,7 +24,7 @@
                 "${env:SKETCHLIBS}\\**",
                 "${env:SKETCHLIBS}\\**\\**",
                 "${env:SKETCHLIBS}\\YogiDelay\\src",
-                "${env:SKETCHLIBS}\\YogiHeaders",
+                "${env:SKETCHLIBS}\\YogiUtilities\\src",
                 "${env:SKETCHLIBS}\\YogiPitches\\src",
                 "${env:SKETCHLIBS}\\YogiRelay\\src",
                 "${env:SKETCHLIBS}\\YogiSonic\\src",
