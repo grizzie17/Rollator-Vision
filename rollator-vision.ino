@@ -24,27 +24,35 @@
 //#define ANTIVIBE
 
 
-// Control the macros below to enable which relay is used.
-#define RELAY_HFD2
-//#define RELAY_SONGLE
-// uncomment following line to build confirmation of
-// relay setting
-//#define RELAY_CONFIRM
+//#define PCB 0 // breadboard
+#define PCB 5
+//#define PCB 6
+
+#if 0 == PCB  // breadboard
+// Songle relay
+const uint8_t k_pinRelayOn = 3;
+const uint8_t k_pinRelayOff = 0;
+const uint8_t k_pinRelayGate = 0;
+const uint8_t k_pinRelayConfirm = 0;
+const uint8_t k_pinStatus = LED_BUILTIN;
+#elif 5 == PCB
+// HFD2 relay
+const uint8_t k_pinRelayOn = 3;
+const uint8_t k_pinRelayOff = 4;
+const uint8_t k_pinRelayGate = 0;
+const uint8_t k_pinRelayConfirm = 0;
+const uint8_t k_pinStatus = LED_BUILTIN;
+#elif 6 == PCB
+// HFD relay with confirmation circuit
+const uint8_t k_pinRelayOn = 4;
+const uint8_t k_pinRelayOff = 3;
+const uint8_t k_pinRelayGate = 10;
+const uint8_t k_pinRelayConfirm = 11;
+const uint8_t k_pinStatus = 12;
+#endif
 
 
 const uint8_t k_pinINT = 2;  // INT0
-const uint8_t k_pinRelayOn = 3;
-#if defined( RELAY_SONGLE )
-const uint8_t k_pinRelayOff = 0;
-const uint8_t k_pinRelayConfirm = 0;
-#else
-const uint8_t k_pinRelayOff = 4;
-#    if defined( RELAY_CONFIRM )
-const uint8_t k_pinRelayConfirm = 12;
-#    else
-const uint8_t k_pinRelayConfirm = 0;
-#    endif
-#endif
 
 
 const uint8_t kPinVibeLeft = 5;   // PWM
@@ -60,8 +68,6 @@ const uint8_t kPinSonicTrigFront = 8;
 const uint8_t kPinSonicEchoRight = 9;
 const uint8_t kPinSonicTrigRight = 9;
 
-const uint8_t k_pinStatus = LED_BUILTIN;
-
 
 const uint8_t kPinPotDist = A0;
 const uint8_t kPinSDA = A4;
@@ -70,6 +76,8 @@ const uint8_t kPinSCL = A5;
 
 // distance below which we ignore
 const unsigned int k_minDistance = 6;  // cm
+
+const unsigned int k_potRange = 1024;
 
 
 typedef enum orientation_t
@@ -90,6 +98,7 @@ unsigned long g_uTimePrevious = 0;
 unsigned long g_uTimeInterrupt = 0;
 unsigned long g_uTimeLaying = 0;
 
+const int           k_nAdxlSensitivity = 18;
 const uint8_t       k_uAdxlDelaySleep = 45;
 const unsigned long k_uDelaySleep = 600 * k_uAdxlDelaySleep;
 
@@ -104,7 +113,7 @@ YogiSleep g_tSleep;
 
 //============== RELAY ===============
 
-YogiRelay g_tRelay( k_pinRelayOn, k_pinRelayOff, k_pinRelayConfirm );
+YogiRelay g_tRelay( k_pinRelayOn, k_pinRelayOff, k_pinRelayConfirm, k_pinRelayGate );
 
 
 //================ ADXL =================
@@ -113,8 +122,7 @@ void
 adxlAttachInterrupt()
 {
     pinMode( k_pinINT, INPUT );
-    attachInterrupt(
-            digitalPinToInterrupt( k_pinINT ), adxlIntHandler, RISING );
+    attachInterrupt( digitalPinToInterrupt( k_pinINT ), adxlIntHandler, RISING );
 }
 
 void
@@ -230,11 +238,10 @@ typedef struct VibeItem
 // following arrays contain millisecond times for on..off
 const VibeItem g_aVibeFront[] = { { 1000, true }, { 1000, false } };
 const VibeItem g_aVibeSide[] = { { 200, true }, { 500, false } };
-const VibeItem g_aVibeBoth[] = { { 1000, true }, { 500, false }, { 200, true },
-    { 500, false }, { 200, true }, { 500, false } };
+const VibeItem g_aVibeBoth[] = { { 1000, true }, { 400, false }, { 200, true }, { 400, false },
+    { 200, true }, { 500, false } };
 
-const int g_nVibeCountFront
-        = sizeof( g_aVibeFront ) / sizeof( g_aVibeFront[0] );
+const int g_nVibeCountFront = sizeof( g_aVibeFront ) / sizeof( g_aVibeFront[0] );
 const int g_nVibeCountSide = sizeof( g_aVibeSide ) / sizeof( g_aVibeSide[0] );
 const int g_nVibeCountBoth = sizeof( g_aVibeBoth ) / sizeof( g_aVibeBoth[0] );
 
@@ -342,8 +349,7 @@ public:
     void
     sync( VibeControl& other )
     {
-        if ( m_aVibeList == other.m_aVibeList
-                && m_nCountVibe == other.m_nCountVibe )
+        if ( m_aVibeList == other.m_aVibeList && m_nCountVibe == other.m_nCountVibe )
         {
             if ( m_index != other.m_index )
             {
@@ -522,7 +528,7 @@ potentiometerRead( uint8_t pin, long nRange )
     delay( 500 );
     int nValue = abs( analogRead( pin ) );
     if ( 0 < nValue )
-        return max( 5, ( (long)nValue * nRange / 2047 ) );
+        return max( 5, ( (long)nValue * nRange / k_potRange ) );
     else
         return 0;
 }
@@ -680,7 +686,7 @@ orientationVertical()
                 if ( 0 < nL && 0 < nR )
                 {
                     nL = 0;
-                    nF = 0;
+                    // nF = 0;
                     nR = 0;
                 }
 
@@ -701,51 +707,44 @@ orientationVertical()
 
                 if ( 1 < nL )
                 {
-                    nVibeValueLeft
-                            = map( nL, g_nPotValueSide, k_minDistance, 1, 255 );
+                    nVibeValueLeft = map( nL, g_nPotValueSide, k_minDistance, 1, 255 );
                 }
 
                 if ( 1 < nF )
                 {
-                    nVibeValueFront = map(
-                            nF, g_nPotValueFront, k_minDistance, 1, 255 );
+                    nVibeValueFront = map( nF, g_nPotValueFront, k_minDistance, 1, 255 );
                 }
 
                 if ( 1 < nR )
                 {
-                    nVibeValueRight
-                            = map( nR, g_nPotValueSide, k_minDistance, 1, 255 );
+                    nVibeValueRight = map( nR, g_nPotValueSide, k_minDistance, 1, 255 );
                 }
 
                 if ( 1 < nF )
                 {
+                    bVibeLeft = true;
+                    bVibeRight = true;
+                    bStatus = true;
                     if ( 1 < nL )
                     {
-                        bVibeLeft = true;
-                        bStatus = true;
                         nVibeValueLeft = max( nVibeValueLeft, nVibeValueFront );
+                        nVibeValueRight = nVibeValueFront;
                         g_tVibeLeft.setPattern( g_nVibeCountBoth, g_aVibeBoth );
+                        g_tVibeRight.setPattern( g_nVibeCountFront, g_aVibeFront );
                     }
                     else if ( 1 < nR )
                     {
-                        bVibeRight = true;
-                        bStatus = true;
-                        nVibeValueRight
-                                = max( nVibeValueRight, nVibeValueFront );
-                        g_tVibeRight.setPattern(
-                                g_nVibeCountBoth, g_aVibeBoth );
+                        nVibeValueLeft = nVibeValueFront;
+                        nVibeValueRight = max( nVibeValueRight, nVibeValueFront );
+                        g_tVibeLeft.setPattern( g_nVibeCountFront, g_aVibeFront );
+                        g_tVibeRight.setPattern( g_nVibeCountBoth, g_aVibeBoth );
                     }
                     else  // front
                     {
-                        bVibeLeft = true;
-                        bVibeRight = true;
-                        bStatus = true;
                         nVibeValueLeft = nVibeValueFront;
                         nVibeValueRight = nVibeValueFront;
-                        g_tVibeLeft.setPattern(
-                                g_nVibeCountFront, g_aVibeFront );
-                        g_tVibeRight.setPattern(
-                                g_nVibeCountFront, g_aVibeFront );
+                        g_tVibeLeft.setPattern( g_nVibeCountFront, g_aVibeFront );
+                        g_tVibeRight.setPattern( g_nVibeCountFront, g_aVibeFront );
                     }
                 }
                 else if ( 1 < nL )
@@ -833,7 +832,7 @@ setup()
 
     updatePotValues();
 
-    adxlSetup( k_uAdxlDelaySleep );
+    adxlSetup( k_uAdxlDelaySleep, k_nAdxlSensitivity );
     adxlAttachInterrupt();
 
     sonicSetup();
