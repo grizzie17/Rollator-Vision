@@ -25,8 +25,8 @@
 
 
 //#define PCB 0 // breadboard
-#define PCB 5
-//#define PCB 6
+//#define PCB 5
+#define PCB 6
 
 #if 0 == PCB  // breadboard
 // Songle relay
@@ -44,8 +44,8 @@ const uint8_t k_pinRelayConfirm = 0;
 const uint8_t k_pinStatus = LED_BUILTIN;
 #elif 6 == PCB
 // HFD relay with confirmation circuit
-const uint8_t k_pinRelayOn = 4;
-const uint8_t k_pinRelayOff = 3;
+const uint8_t k_pinRelayOn = 3;
+const uint8_t k_pinRelayOff = 4;
 const uint8_t k_pinRelayGate = 10;
 const uint8_t k_pinRelayConfirm = 11;
 const uint8_t k_pinStatus = 12;
@@ -559,7 +559,7 @@ isHorizontal()
 {
     int x, y, z;
     adxl.readAccel( &x, &y, &z );
-    return abs( z ) < 100 ? true : false;
+    return abs( y ) < 100 ? true : false;
 }
 
 
