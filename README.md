@@ -55,6 +55,8 @@ Printed Circuit Board Diagram
 
 The `Arduino Nano V3` microprocessor is the heart of our Rollator-Vision project.
 
+To reduce power, we unsolder the `Power` and `Pin13` LEDs. The other LEDs should be okay since in the non-debug version we don't write anything to the Serial Console (TX,RX);
+
 Please see the tables in the sections below for connection details to the Arduino.
 
 
