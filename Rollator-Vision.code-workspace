@@ -19,6 +19,10 @@
 		]
 	},
 	"settings": {
+		// C++
+		"C_Cpp.clang_format_path": "C:/Program Files/LLVM/bin/clang-format.exe",
+		"C_Cpp.clang_format_style": "file",
+		"C_Cpp.formatting": "Default",
 		// arduino
 		"arduino.path": "C:/Arduino",
 		"arduino.commandPath": "arduino_debug.exe",
