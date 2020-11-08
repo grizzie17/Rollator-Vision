@@ -227,6 +227,79 @@ watchdogHandler()
 }
 
 
+//================= STATUS =================
+
+class StatusLED
+{
+public:
+    StatusLED()
+    {
+        init();
+    }
+
+    void
+    init()
+    {
+        m_bOn = false;
+        m_bVibe = false;
+        m_uStatus = LOW;
+        pinMode( k_pinStatus, OUTPUT );
+    }
+
+    void
+    awake()
+    {
+        m_bOn = true;
+        m_bVibe = false;
+        ledControl();
+    }
+
+    void
+    sleep()
+    {
+        m_bOn = false;
+        m_bVibe = false;
+        ledControl();
+    }
+
+    void
+    vibeOn()
+    {
+        m_bVibe = true;
+        ledControl();
+    }
+
+    void
+    vibeOff()
+    {
+        m_bVibe = false;
+        ledControl();
+    }
+
+protected:
+    bool    m_bOn = false;
+    bool    m_bVibe = false;
+    uint8_t m_uStatus = LOW;
+
+    void
+    ledControl()
+    {
+        if ( m_bOn )
+        {
+            m_uStatus = m_bVibe ? 255 : 127;
+            m_uStatus = HIGH;
+        }
+        else
+        {
+            m_uStatus = LOW;
+        }
+        digitalWrite( k_pinStatus, m_uStatus );
+    }
+};
+
+StatusLED g_tStatusLED;
+
+
 //=========== VIBE ===========
 
 typedef struct VibeItem
@@ -640,12 +713,12 @@ orientationVertical()
             if ( 0 != ( mInterrupts & ADXL_M_INACTIVITY ) )
             {
                 WatchDog::stop();
-                digitalWrite( k_pinStatus, LOW );
+                g_tStatusLED.sleep();
                 enterSleep();
 
                 // stuff to do when we wake up
                 g_nActivity = 0;
-                digitalWrite( k_pinStatus, HIGH );
+                g_tStatusLED.awake();
                 updatePotValues();
                 g_tAvgLeft.reset();
                 g_tAvgFront.reset();
@@ -776,10 +849,10 @@ orientationVertical()
                 else
                     g_tVibeRight.off();
 
-                // if ( bStatus )
-                //     digitalWrite( k_pinStatus, HIGH );
-                // else
-                //     digitalWrite( k_pinStatus, LOW );
+                if ( bStatus )
+                    g_tStatusLED.vibeOn();
+                else
+                    g_tStatusLED.vibeOff();
 
 
                 g_tVibeLeft.sync( g_tVibeRight );
@@ -807,7 +880,7 @@ orientationHorizontal()
         {
             g_bActiveLaydown = true;
 
-            digitalWrite( k_pinStatus, LOW );
+            g_tStatusLED.sleep();
 
             watchdogSleep();
         }
@@ -819,7 +892,7 @@ orientationHorizontal()
             g_bActiveLaydown = false;
             watchdogWakeup();
             g_eOrientation = OR_VERTICAL;
-            digitalWrite( k_pinStatus, HIGH );
+            g_tStatusLED.awake();
         }
     }
 }
@@ -831,7 +904,6 @@ setup()
 {
     DEBUG_OPEN();
 
-    pinMode( k_pinStatus, OUTPUT );
 
     g_tRelay.init();
     delay( 100 );
@@ -858,7 +930,8 @@ setup()
     g_uTimePrevious = 0;
     g_uTimeLaying = 0;
 
-    digitalWrite( k_pinStatus, HIGH );
+    g_tStatusLED.init();
+    g_tStatusLED.awake();
 }
 
 
