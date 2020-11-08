@@ -557,6 +557,8 @@ updatePotValues()
 bool
 isHorizontal()
 {
+    // the adxl is mounted on the edge so the
+    // 'y' axis is treated as the 'z' axis.
     int x, y, z;
     adxl.readAccel( &x, &y, &z );
     return abs( y ) < 100 ? true : false;
@@ -638,10 +640,12 @@ orientationVertical()
             if ( 0 != ( mInterrupts & ADXL_M_INACTIVITY ) )
             {
                 WatchDog::stop();
+                digitalWrite( k_pinStatus, LOW );
                 enterSleep();
 
                 // stuff to do when we wake up
                 g_nActivity = 0;
+                digitalWrite( k_pinStatus, HIGH );
                 updatePotValues();
                 g_tAvgLeft.reset();
                 g_tAvgFront.reset();
@@ -772,10 +776,10 @@ orientationVertical()
                 else
                     g_tVibeRight.off();
 
-                if ( bStatus )
-                    digitalWrite( k_pinStatus, HIGH );
-                else
-                    digitalWrite( k_pinStatus, LOW );
+                // if ( bStatus )
+                //     digitalWrite( k_pinStatus, HIGH );
+                // else
+                //     digitalWrite( k_pinStatus, LOW );
 
 
                 g_tVibeLeft.sync( g_tVibeRight );
@@ -803,6 +807,8 @@ orientationHorizontal()
         {
             g_bActiveLaydown = true;
 
+            digitalWrite( k_pinStatus, LOW );
+
             watchdogSleep();
         }
     }
@@ -813,6 +819,7 @@ orientationHorizontal()
             g_bActiveLaydown = false;
             watchdogWakeup();
             g_eOrientation = OR_VERTICAL;
+            digitalWrite( k_pinStatus, HIGH );
         }
     }
 }
@@ -850,6 +857,8 @@ setup()
     g_uTimeCurrent = millis();
     g_uTimePrevious = 0;
     g_uTimeLaying = 0;
+
+    digitalWrite( k_pinStatus, HIGH );
 }
 
 
@@ -879,5 +888,3 @@ loop()
         }
     }
 }
-
-// Simetherone (for Dad's gas problem)
