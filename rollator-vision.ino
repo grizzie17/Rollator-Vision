@@ -246,7 +246,7 @@ public:
         pinMode( k_pinStatus, OUTPUT );
     }
 
-    void
+    inline void
     awake()
     {
         m_bOn = true;
@@ -254,7 +254,7 @@ public:
         ledControl();
     }
 
-    void
+    inline void
     sleep()
     {
         m_bOn = false;
@@ -262,18 +262,18 @@ public:
         ledControl();
     }
 
-    void
+    inline void
     vibeOn()
     {
-        m_bVibe = true;
-        ledControl();
+        // m_bVibe = true;
+        // ledControl();
     }
 
-    void
+    inline void
     vibeOff()
     {
-        m_bVibe = false;
-        ledControl();
+        // m_bVibe = false;
+        // ledControl();
     }
 
 protected:
@@ -284,15 +284,15 @@ protected:
     void
     ledControl()
     {
-        if ( m_bOn )
-        {
-            m_uStatus = m_bVibe ? 255 : 127;
-            m_uStatus = HIGH;
-        }
-        else
-        {
-            m_uStatus = LOW;
-        }
+        m_uStatus = m_bOn ? HIGH : LOW;
+        // if ( m_bOn )
+        // {
+        //     m_uStatus = m_bVibe ? 255 : 127;
+        // }
+        // else
+        // {
+        //     m_uStatus = LOW;
+        // }
         digitalWrite( k_pinStatus, m_uStatus );
     }
 };
@@ -310,7 +310,7 @@ typedef struct VibeItem
 
 // following arrays contain millisecond times for on..off
 const VibeItem g_aVibeFront[] = { { 1000, true }, { 1000, false } };
-const VibeItem g_aVibeSide[] = { { 200, true }, { 500, false } };
+const VibeItem g_aVibeSide[] = { { 500, true }, { 500, false } };
 const VibeItem g_aVibeBoth[] = { { 1000, true }, { 400, false }, { 200, true }, { 400, false },
     { 200, true }, { 500, false } };
 
@@ -806,7 +806,7 @@ orientationVertical()
                     {
                         nVibeValueLeft = max( nVibeValueLeft, nVibeValueFront );
                         nVibeValueRight = nVibeValueFront;
-                        g_tVibeLeft.setPattern( g_nVibeCountBoth, g_aVibeBoth );
+                        g_tVibeLeft.setPattern( g_nVibeCountSide, g_aVibeSide );
                         g_tVibeRight.setPattern( g_nVibeCountFront, g_aVibeFront );
                     }
                     else if ( 1 < nR )
@@ -814,7 +814,7 @@ orientationVertical()
                         nVibeValueLeft = nVibeValueFront;
                         nVibeValueRight = max( nVibeValueRight, nVibeValueFront );
                         g_tVibeLeft.setPattern( g_nVibeCountFront, g_aVibeFront );
-                        g_tVibeRight.setPattern( g_nVibeCountBoth, g_aVibeBoth );
+                        g_tVibeRight.setPattern( g_nVibeCountSide, g_aVibeSide );
                     }
                     else  // front
                     {
