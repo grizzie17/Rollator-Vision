@@ -30,7 +30,9 @@
                 "${env:SKETCHLIBS}\\YogiSonic\\src",
                 "${env:SKETCHLIBS}\\Yogi_ADXL345\\src",
                 "${env:SKETCHLIBS}\\SparkFun_ADXL345_Arduino_Library\\src",
-                "${env:SKETCHLIBS}\\WatchDog"
+                "${env:SKETCHLIBS}\\WatchDog",
+                "C:\\Arduino\\hardware\\tools\\**",
+                "C:\\Users\\johng\\LocalDocuments\\Development\\Arduino-Sketchbooks\\libraries\\**"
             ],
             "forcedInclude": [
                 "C:\\Arduino\\hardware\\arduino\\avr\\cores\\arduino\\Arduino.h"
