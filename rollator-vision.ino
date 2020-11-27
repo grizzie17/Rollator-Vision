@@ -77,7 +77,7 @@ const uint8_t kPinSCL = A5;
 // distance below which we ignore
 const unsigned int k_minDistance = 6;  // cm
 
-const unsigned int k_potRange = 1024;
+const unsigned int k_potRange = 2048;
 
 
 typedef enum orientation_t
@@ -615,7 +615,7 @@ updatePotValues()
     if ( 0 < nValue )
     {
         g_nPotValueSide = nValue;
-        g_nPotValueFront = g_nPotValueSide * 2;
+        g_nPotValueFront = g_nPotValueSide * 3;
     }
 
     DEBUG_VPRINT( "Pot Values: Side=", g_nPotValueSide );
@@ -912,8 +912,7 @@ setup()
     updatePotValues();
 
     adxlSetup( k_uAdxlDelaySleep, k_nAdxlSensitivity );
-    adxlAttachInterrupt();
-
+    adxlWakeup();
     sonicSetup();
 
     g_tVibeLeft.init();
