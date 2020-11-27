@@ -129,8 +129,8 @@ EN = 0.87
 
 Li-Ion VIN cutoff should be 5.8V and the fully charged battery pack should be 8.3V.
 
-EN = 8.3V * 0.7V / 5.8V  
-EN = 1.0017
+EN = 8.3V * 0.7V / 6.4V  
+EN = 0.908
 
 
 -----
